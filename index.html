@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rancho Caprino</title>
+  <meta name="theme-color" content="#14301a">
+  <meta name="description" content="Sistema de gestión para rancho caprino: hato, empadre, partos, producción, leche, salud, manejo y ventas.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+<!-- Íconos (se usan con <use href="#i-nombre">) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.5"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.5"/><rect x="3" y="15" width="7.5" height="6" rx="1.5"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 4.5V11l9.3 9.3a1.8 1.8 0 0 0 2.5 0l5.5-5.5a1.8 1.8 0 0 0 0-2.5L11 3H4.5A1.5 1.5 0 0 0 3 4.5z"/><circle cx="7.8" cy="7.8" r="1.3"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5s-8-4.8-8-11A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5c0 6.2-8 11-8 11z"/></symbol>
+  <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 21v-9"/><path d="M12 12c0-3.5-2.5-6-7-6 0 4 2.5 6 7 6z"/><path d="M12 14c0-3 2-5.5 7-5.5 0 4-2.5 5.5-7 5.5z"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M6 20h12"/><path d="M4 7h16"/><path d="M6.5 7 3.5 14a3.2 3.2 0 0 0 6 0z"/><path d="M17.5 7 14.5 14a3.2 3.2 0 0 0 6 0z"/></symbol>
+  <symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 3s6.5 6.6 6.5 11.2a6.5 6.5 0 0 1-13 0C5.5 9.6 12 3 12 3z"/></symbol>
+  <symbol id="i-health" viewBox="0 0 24 24"><path d="M12 21.500s-8-4.3-8-10.500V5.500l8-3 8 3V11c0 6.2-8 10.5-8 10.500z"/><path d="M12 8v6M9 11h6"/></symbol>
+  <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5.5" y="4" width="13" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 12h6M9 16h4"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5.5 3h13v18l-2.5-1.800L13.5 21 12 19.2 10.5 21 8 19.2 5.5 21z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m6 7 1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8.500V20l-4-2v-4.500z"/></symbol>
+  <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+</svg>
+
+<!-- ============ ACCESO ============ -->
+<main id="auth-screen">
+  <div class="auth-side">
+    <div>
+      <img src="assets/logo.png" alt="Rancho Caprino">
+      <h1>Rancho Caprino</h1>
+      <p>Registro del hato, empadre y partos, producción de leche, salud, manejo y ventas en un solo lugar.</p>
+    </div>
+    <div class="auth-foot">Sistema de gestión ganadera</div>
+  </div>
+  <div class="auth-main">
+    <div class="auth-card">
+      <h2>Bienvenido</h2>
+      <p class="lead">Accede con tu cuenta para consultar y registrar información del rancho.</p>
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab" role="tab" data-tab="login" aria-selected="true" type="button">Iniciar sesión</button>
+        <button class="auth-tab" role="tab" data-tab="registro" aria-selected="false" type="button">Crear cuenta</button>
+      </div>
+      <div id="auth-msg" class="auth-msg" role="alert"></div>
+
+      <form id="form-login" class="auth-form" novalidate>
+        <div class="field"><label for="login-email">Correo electrónico</label><input id="login-email" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="login-password">Contraseña</label><input id="login-password" type="password" autocomplete="current-password" required></div>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+      </form>
+
+      <form id="form-registro" class="auth-form" hidden novalidate>
+        <div class="field"><label for="reg-nombre">Nombre completo</label><input id="reg-nombre" type="text" autocomplete="name"></div>
+        <div class="field"><label for="reg-email">Correo electrónico</label><input id="reg-email" type="email" autocomplete="email"></div>
+        <div class="field"><label for="reg-telefono">Teléfono (opcional)</label><input id="reg-telefono" type="tel" autocomplete="tel"></div>
+        <div class="field"><label for="reg-rol">Rol</label>
+          <select id="reg-rol"><option value="productor">Productor</option><option value="veterinario">Veterinario</option><option value="capturista">Capturista</option></select></div>
+        <div class="field"><label for="reg-password">Contraseña (mínimo 6 caracteres)</label><input id="reg-password" type="password" autocomplete="new-password"></div>
+        <div class="field"><label for="reg-password2">Confirmar contraseña</label><input id="reg-password2" type="password" autocomplete="new-password"></div>
+        <button type="submit" class="btn btn-primary">Crear cuenta</button>
+      </form>
+
+      <div class="setup-note" id="config-pendiente" hidden>
+        <strong>Falta configurar Supabase.</strong> Abre <code>js/config.js</code> y escribe la URL y la anon key de tu proyecto nuevo. Antes, ejecuta <code>database/schema.sql</code> en el SQL Editor.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ APLICACIÓN ============ -->
+<div id="app-shell">
+  <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+    <div class="brand">
+      <img src="assets/logo.png" alt="">
+      <div><div class="brand-name">Rancho Caprino</div><div class="brand-sub">Sistema de gestión</div></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <div class="user-avatar" id="user-avatar">—</div>
+      <div class="user-meta"><div class="user-name" id="user-name">—</div><div class="user-role" id="user-role"></div></div>
+      <button class="btn-icon-dark" id="btn-salir" type="button" title="Cerrar sesión" aria-label="Cerrar sesión"><svg class="icon"><use href="#i-logout"/></svg></button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menú"><svg class="icon"><use href="#i-menu"/></svg></button>
+      <div class="crumbs">Rancho Caprino / <strong id="crumb">Dashboard</strong></div>
+      <div class="topbar-right"><span class="live" id="live"><span class="live-dot"></span><span>En vivo</span></span></div>
+    </header>
+    <div class="main">
+      <div class="loading" id="cargando" hidden><span class="spinner"></span>Cargando datos del rancho…</div>
+      <div class="empty" id="error-carga" hidden></div>
+      <div id="views"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/tablekit.js"></script>
+<script src="js/animales.js"></script>
+<script src="js/empadre.js"></script>
+<script src="js/partos.js"></script>
+<script src="js/produccion.js"></script>
+<script src="js/leche.js"></script>
+<script src="js/salud.js"></script>
+<script src="js/manejo.js"></script>
+<script src="js/ventas.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
