@@ -164,7 +164,7 @@ function renderDashboard() {
   const sk = Object.keys(st).sort((a, b) => st[b] - st[a]);
   document.getElementById('n-salud').textContent = `${sal.length} eventos`;
   if (prepararCaja('b-salud', 'g-salud', sk.length > 0, 'No hay eventos de salud en este periodo.'))
-    dibujarGrafica('g-salud', 'bar', sk.map(k => L.salud[k]), [{ label: 'Eventos', data: sk.map(k => st[k]), backgroundColor: COLORES.cuerno, borderRadius: 2 }], { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } });
+    dibujarGrafica('g-salud', 'bar', sk.map(k => lbl('salud', k)), [{ label: 'Eventos', data: sk.map(k => st[k]), backgroundColor: COLORES.cuerno, borderRadius: 2 }], { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } });
 
   // ---------- GDP ----------
   const pes = store.pesajes.filter(p => p.gdp_g != null && enPeriodo(p.fecha, desde)); const gm = {};
@@ -182,8 +182,8 @@ function renderDashboard() {
 
   const grupos = {};
   store.salud.filter(s => proximaPendiente(s) && daysUntil(s.proxima_fecha) <= 30).forEach(s => {
-    const k = [s.tipo, s.medicamento || '', s.proxima_fecha].join('|');
-    (grupos[k] = grupos[k] || { fecha: s.proxima_fecha, titulo: `${lbl('salud', s.tipo)}${s.medicamento ? ' · ' + s.medicamento : ''}`, animales: [], origen: 'Salud' }).animales.push(s.id_animal);
+    const k = [s.tipo, tratamientoDe(s) || '', s.proxima_fecha].join('|');
+    (grupos[k] = grupos[k] || { fecha: s.proxima_fecha, titulo: `${lbl('salud', s.tipo)}${tratamientoDe(s) ? ' · ' + tratamientoDe(s) : ''}`, animales: [], origen: 'Salud' }).animales.push(s.id_animal);
   });
   const pend = Object.values(grupos);
   store.manejo.filter(x => x.estado === 'programado').forEach(x => pend.push({ fecha: x.fecha, titulo: lbl('manejo', x.tipo), animales: x.id_animal ? [x.id_animal] : [], lote: x.lote, origen: 'Manejo' }));
@@ -196,8 +196,8 @@ function renderDashboard() {
 
   const aten = [];
   abiertos.forEach(s => aten.push({ id: s.id_animal, sub: s.diagnostico || lbl('salud', s.tipo), der: 'Caso abierto', subDer: fmtDate(s.fecha), tono: 'warn', orden: 0 }));
-  store.salud.filter(s => retiroActivo(s, 'leche')).forEach(s => aten.push({ id: s.id_animal, sub: s.medicamento || lbl('salud', s.tipo), der: 'Sin leche hasta ' + fmtDate(s.fin_retiro_leche), subDer: cuandoTexto(daysUntil(s.fin_retiro_leche)), tono: 'neg', orden: 1 }));
-  store.salud.filter(s => retiroActivo(s, 'carne')).forEach(s => aten.push({ id: s.id_animal, sub: s.medicamento || lbl('salud', s.tipo), der: 'Sin carne hasta ' + fmtDate(s.fin_retiro_carne), subDer: cuandoTexto(daysUntil(s.fin_retiro_carne)), tono: 'neg', orden: 2 }));
+  store.salud.filter(s => retiroActivo(s, 'leche')).forEach(s => aten.push({ id: s.id_animal, sub: tratamientoDe(s) || lbl('salud', s.tipo), der: 'Sin leche hasta ' + fmtDate(s.fin_retiro_leche), subDer: cuandoTexto(daysUntil(s.fin_retiro_leche)), tono: 'neg', orden: 1 }));
+  store.salud.filter(s => retiroActivo(s, 'carne')).forEach(s => aten.push({ id: s.id_animal, sub: tratamientoDe(s) || lbl('salud', s.tipo), der: 'Sin carne hasta ' + fmtDate(s.fin_retiro_carne), subDer: cuandoTexto(daysUntil(s.fin_retiro_carne)), tono: 'neg', orden: 2 }));
   aten.sort((a, b) => a.orden - b.orden);
   document.getElementById('l-salud').innerHTML = aten.length ? aten.slice(0, 8).map(a => fila(animalHtml(a.id), esc(a.sub), esc(a.der), esc(a.subDer), a.tono)).join('') : '<div class="list-empty">Sin casos abiertos ni retiros vigentes.</div>';
 }

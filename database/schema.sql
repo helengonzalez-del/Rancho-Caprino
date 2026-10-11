@@ -243,11 +243,10 @@ create table public.salud (
   id_animal            uuid not null references public.animales(id) on delete cascade,
   id_usuario           uuid default auth.uid() references public.usuarios(id) on delete set null,
   fecha                date not null default current_date,
-  tipo                 text not null
-                       check (tipo in ('vacuna','desparasitacion','tratamiento','enfermedad','prueba','revision')),
+  tipo                 text not null,              -- enfermedad (Mastitis, Neumonía…), Castración, Despezuñar u otro tipo agregado
   diagnostico          text,
-  tratamiento          text,
-  medicamento          text,
+  tratamiento          text,                       -- medicamento o procedimiento aplicado
+  medicamento          text,                       -- en desuso: la app usa "tratamiento"; se conserva por registros anteriores
   dosis                text,
   via                  text check (via in ('oral','intramuscular','subcutanea','intravenosa','topica','intramamaria')),
   gravedad             text check (gravedad in ('leve','moderada','grave')),
