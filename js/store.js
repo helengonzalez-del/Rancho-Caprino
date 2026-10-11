@@ -108,17 +108,17 @@ function animalHtml(id, conFicha = true, conNombre = true) {
   const chip = conFicha
     ? `<button type="button" class="link-arete" data-ficha="${a.id}" title="Ver ficha de ${esc(a.identificador)}">${areteHtml(a)}</button>`
     : areteHtml(a);
-  return `<span class="animal-celda">${chip}${conNombre && a.nombre ? `<span class="nombre">${esc(a.nombre)}</span>` : ''}</span>`;
+  return `<span class="animal-celda">${chip}</span>`;
 }
 function animalTexto(id) {
   const a = animal(id);
-  return a ? a.identificador + (a.nombre ? ' · ' + a.nombre : '') : '';
+  return a ? a.identificador : '';
 }
 function opcionAnimal(a) {
-  return { id: a.id, html: areteHtml(a) + (a.nombre ? `<span class="nombre">${esc(a.nombre)}</span>` : ''), meta: a.lote || '', texto: norm([a.identificador, a.nombre, a.lote, a.raza].join(' ')) };
+  return { id: a.id, html: areteHtml(a), meta: a.lote || '', texto: norm([a.identificador, a.lote, a.raza].join(' ')) };
 }
 
-// Retiro por medicamento: leche o carne no aptas
+// Retiro por medicamentos: leche o carne no aptas
 function retiroVigente(animalId, tipo = 'leche', fecha = hoy()) {
   const campo = tipo === 'leche' ? 'fin_retiro_leche' : 'fin_retiro_carne';
   return store.salud

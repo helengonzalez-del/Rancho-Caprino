@@ -113,7 +113,7 @@ function formParto({ empadre } = {}) {
       if (filas.length) {
         const madre = animal(idMadre), idPadre = e ? e.id_macho : null;
         const { data: nuevas, error: e2 } = await db.from('animales').insert(filas.map(f => ({
-          identificador: f.identificador, nombre: f.nombre || null, sexo: f.sexo, raza: madre?.raza || null, fecha_nacimiento: v.fecha_parto,
+          identificador: f.identificador, sexo: f.sexo, raza: madre?.raza || null, fecha_nacimiento: v.fecha_parto,
           estado_productivo: 'cria', origen: 'nacido_en_rancho', id_madre: idMadre, id_padre: idPadre, nombre_padre: idPadre ? null : (e?.macho_externo || null),
           id_parto: parto.id, peso_inicial: f.peso ? Number(f.peso) : null,
         }))).select('id, identificador');

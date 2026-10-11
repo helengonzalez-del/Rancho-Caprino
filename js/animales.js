@@ -16,7 +16,7 @@ registrarSeccion({
   vacio: { titulo: 'Todavía no hay animales', texto: 'Registra el primer animal del hato para empezar a llevar su historial.' },
   filas: () => store.animales,
   filtros: [
-    { id: 'q', tipo: 'buscar', placeholder: 'Arete, nombre, arete SINIIGA, padres, lote…', texto: r => [r.identificador, r.nombre, r.arete_siniiga, r.nombre_madre, r.nombre_padre, animalTexto(r.id_madre), animalTexto(r.id_padre), r.lote, r.raza] },
+    { id: 'q', tipo: 'buscar', placeholder: 'Arete, padres, lote, raza…', texto: r => [r.identificador, r.nombre_madre, r.nombre_padre, animalTexto(r.id_madre), animalTexto(r.id_padre), r.lote, r.raza] },
     { id: 'sexo', tipo: 'select', label: 'Sexo', opciones: () => opts('sexo'), prueba: (r, v) => r.sexo === v },
     { id: 'estado', tipo: 'select', label: 'Estado', opciones: () => opts('estado'), prueba: (r, v) => r.estado === v },
     { id: 'cat', tipo: 'select', label: 'Categoría', opciones: () => opts('estado_productivo'), prueba: (r, v) => r.estado_productivo === v },
@@ -32,7 +32,6 @@ registrarSeccion({
   ],
   columnas: [
     { key: 'arete', label: 'Arete', texto: r => r.identificador, html: r => animalHtml(r.id, true, false), csv: r => r.identificador },
-    { key: 'nombre', label: 'Nombre', texto: r => r.nombre },
     { key: 'sexo', label: 'Sexo', texto: r => lbl('sexo', r.sexo) },
     { key: 'raza', label: 'Raza', texto: r => r.raza },
     { key: 'edad', label: 'Edad', orden: r => r.fecha_nacimiento ? diffDays(hoy(), r.fecha_nacimiento) : null, html: r => r.fecha_nacimiento ? `<span title="${esc(fmtDate(r.fecha_nacimiento))}">${esc(edadTexto(r.fecha_nacimiento))}</span>` : '', csv: r => edadTexto(r.fecha_nacimiento) },
@@ -55,6 +54,14 @@ registrarSeccion({
   manejadores: { ficha: r => abrirFicha(r.id), editar: r => formAnimal(r), borrar: r => borrarAnimal(r) },
 });
 
+// Categorías productivas según el sexo del animal
+const CAT_HEMBRA = ['cria', 'destetado', 'reemplazo', 'engorda', 'servicio', 'gestante', 'lactando', 'seca'];
+const CAT_MACHO = ['cria', 'destetado', 'reemplazo', 'engorda', 'servicio', 'semental'];
+function categoriasPorSexo(sexo) {
+  const lista = sexo === 'hembra' ? CAT_HEMBRA : sexo === 'macho' ? CAT_MACHO : Object.keys(L.estado_productivo);
+  return lista.map(k => [k, L.estado_productivo[k]]);
+}
+
 function formAnimal(a) {
   const edit = !!a;
   const hembras = store.animales.filter(x => x.sexo === 'hembra' && x.id !== a?.id).map(x => [x.id, animalTexto(x.id)]);
@@ -67,8 +74,6 @@ function formAnimal(a) {
     campos: [
       { name: 's1', tipo: 'section', label: 'Identificación' },
       { name: 'identificador', label: 'Número de arete', tipo: 'text', requerido: true, placeholder: 'Ej: C-014' },
-      { name: 'nombre', label: 'Nombre', tipo: 'text' },
-      { name: 'arete_siniiga', label: 'Arete SINIIGA (opcional)', tipo: 'text' },
       { name: 'sexo', label: 'Sexo', tipo: 'select', requerido: true, opciones: opts('sexo') },
       { name: 'raza', label: 'Raza', tipo: 'select', opciones: () => [...razas().map(x => [x, x]), ['__nueva__', '+ Agregar otra raza…']] },
       { name: 'raza_nueva', label: 'Nombre de la nueva raza', tipo: 'text', requerido: true, mostrarSi: v => v.raza === '__nueva__' },
@@ -78,7 +83,7 @@ function formAnimal(a) {
       { name: 'fecha_ingreso', label: 'Fecha de ingreso al rancho', tipo: 'date' },
       { name: 'origen', label: 'Origen', tipo: 'select', sinVacio: true, opciones: opts('origen') },
       { name: 'estado', label: 'Estado general', tipo: 'select', sinVacio: true, opciones: opts('estado') },
-      { name: 'estado_productivo', label: 'Categoría productiva', tipo: 'select', opciones: opts('estado_productivo'), ayuda: 'Se actualiza sola al registrar partos, secado y destete.' },
+      { name: 'estado_productivo', label: 'Categoría productiva', tipo: 'select', dinamico: true, opciones: v => categoriasPorSexo(v.sexo), ayuda: 'Se actualiza sola al registrar partos, secado y destete.' },
       { name: 'lote', label: 'Lote o corral', tipo: 'text', lista: lotes, placeholder: 'Ej: Producción' },
       { name: 'peso_inicial', label: 'Peso inicial (kg)', tipo: 'number', min: 0, paso: '0.01', mostrarSi: () => !edit, ayuda: 'Crea el primer pesaje del animal.' },
       { name: 'partos_previos', label: 'Partos anteriores al sistema', tipo: 'number', min: 0, paso: 1, mostrarSi: v => v.sexo !== 'macho' },
@@ -100,7 +105,7 @@ function formAnimal(a) {
       }
       const hembra = v.sexo === 'hembra';
       const p = {
-        identificador: v.identificador, nombre: v.nombre, arete_siniiga: v.arete_siniiga, sexo: v.sexo, raza: raza || null,
+        identificador: v.identificador, sexo: v.sexo, raza: raza || null,
         proposito: v.proposito, fecha_nacimiento: v.fecha_nacimiento, fecha_ingreso: v.fecha_ingreso || hoy(), origen: v.origen,
         estado: v.estado, estado_productivo: v.estado_productivo, lote: v.lote, partos_previos: hembra ? (v.partos_previos || 0) : 0,
         fecha_baja: v.fecha_baja ?? null, motivo_baja: v.motivo_baja ?? null,
@@ -155,11 +160,11 @@ function abrirFicha(id) {
 
   const retL = retiroVigente(id, 'leche'), retC = retiroVigente(id, 'carne');
   const cuerpo = `
-    <div class="ficha-top">${areteHtml(a)}<h3>${esc(a.nombre || 'Sin nombre')}</h3>${badge('estado', a.estado)}${a.estado_productivo ? badge('estado_productivo', a.estado_productivo) : ''}${a.gestante ? `<span class="badge aviso">Gestante · parto ${esc(fmtDate(a.parto_estimado))}</span>` : ''}${retL ? `<span class="badge peligro">Leche en retiro hasta ${esc(fmtDate(retL.fin_retiro_leche))}</span>` : ''}${retC ? `<span class="badge peligro">Carne en retiro hasta ${esc(fmtDate(retC.fin_retiro_carne))}</span>` : ''}</div>
+    <div class="ficha-top">${areteHtml(a)}${badge('estado', a.estado)}${a.estado_productivo ? badge('estado_productivo', a.estado_productivo) : ''}${a.gestante ? `<span class="badge aviso">Gestante · parto ${esc(fmtDate(a.parto_estimado))}</span>` : ''}${retL ? `<span class="badge peligro">Leche en retiro hasta ${esc(fmtDate(retL.fin_retiro_leche))}</span>` : ''}${retC ? `<span class="badge peligro">Carne en retiro hasta ${esc(fmtDate(retC.fin_retiro_carne))}</span>` : ''}</div>
     <dl class="ficha-grid">
       ${dd('Sexo', lbl('sexo', a.sexo))}${dd('Raza', esc(a.raza))}${dd('Propósito', a.proposito ? lbl('proposito', a.proposito) : '')}
       ${dd('Nacimiento', a.fecha_nacimiento ? `${esc(fmtDate(a.fecha_nacimiento))} · ${esc(edadTexto(a.fecha_nacimiento))}` : '')}${dd('Origen', lbl('origen', a.origen))}${dd('Lote', esc(a.lote))}
-      ${dd('Madre', madre)}${dd('Padre', padre)}${dd('Arete SINIIGA', esc(a.arete_siniiga))}
+      ${dd('Madre', madre)}${dd('Padre', padre)}
       ${dd('Último peso', a.ultimo_peso != null ? `${fmtNum(a.ultimo_peso)} kg · ${esc(fmtDate(a.fecha_ultimo_peso))}` : '')}
       ${a.sexo === 'hembra' ? dd('Partos', String(a.numero_partos)) + dd('Leche (30 días)', leche.length ? `${fmtNum(sum(leche, l => l.litros))} L · ${fmtNum(sum(leche, l => l.litros) / (diasLeche || 1))} L/día` : '') : dd('Crías registradas', String(hijos.length))}
     </dl>

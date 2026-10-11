@@ -82,7 +82,7 @@ function abrirFormulario({ titulo, sub, campos, valores = {}, etiqueta = 'Guarda
       if (c.tipo === 'check') v[c.name] = el.querySelector('input').checked;
       else if (c.tipo === 'animales') v[c.name] = [...el.querySelectorAll('.picker-item input:checked')].map(i => i.value);
       else if (c.tipo === 'crias') v[c.name] = [...el.querySelectorAll('.cria-row')].map(r => ({
-        identificador: r.querySelector('[data-k=identificador]').value.trim(), nombre: r.querySelector('[data-k=nombre]').value.trim(),
+        identificador: r.querySelector('[data-k=identificador]').value.trim(),
         sexo: r.querySelector('[data-k=sexo]').value, peso: r.querySelector('[data-k=peso]').value }));
       else {
         const raw = el.querySelector('input,select,textarea').value;
@@ -93,6 +93,17 @@ function abrirFormulario({ titulo, sub, campos, valores = {}, etiqueta = 'Guarda
   }
   function visibles() {
     const v = crudo();
+    // Selects cuyas opciones dependen de otros campos (por ejemplo, la categoría según el sexo)
+    campos.filter(c => c.dinamico).forEach(c => {
+      const sel = cont(c.name).querySelector('select');
+      const lista = c.opciones(v), firma = JSON.stringify(lista);
+      if (sel.dataset.firma === firma) return;
+      sel.dataset.firma = firma;
+      const actual = sel.value;
+      sel.innerHTML = `<option value="">${esc(c.vacio || 'Seleccionar…')}</option>` + lista.map(([val, l]) => `<option value="${esc(val)}">${esc(l)}</option>`).join('');
+      sel.value = lista.some(([val]) => val === actual) ? actual : '';
+      v[c.name] = sel.value || null;
+    });
     campos.forEach(c => { if (c.mostrarSi) { const el = cont(c.name); if (el) el.hidden = !c.mostrarSi(v); } });
     const out = {};
     campos.forEach(c => { if (['info', 'section'].includes(c.tipo)) return; const el = cont(c.name); if (!el.hidden) out[c.name] = v[c.name]; });
@@ -187,7 +198,7 @@ function htmlCampo(c) {
   let ctl = '';
   const ph = c.placeholder ? `placeholder="${esc(c.placeholder)}"` : '';
   if (c.tipo === 'select') {
-    const o = typeof c.opciones === 'function' ? c.opciones() : c.opciones;
+    const o = typeof c.opciones === 'function' ? c.opciones({}) : c.opciones;
     ctl = `<select id="${id}">${c.sinVacio ? '' : `<option value="">${esc(c.vacio || 'Seleccionar…')}</option>`}${o.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select>`;
   } else if (c.tipo === 'textarea') ctl = `<textarea id="${id}" rows="${c.filas || 2}" ${ph}></textarea>`;
   else if (c.tipo === 'check') return `<div class="field ${full}" data-campo="${c.name}"><label class="check"><input type="checkbox" id="${id}"> ${esc(c.label)}</label>${ayuda}</div>`;
@@ -221,7 +232,6 @@ function agregarCria(el, f = {}) {
   row.className = 'cria-row';
   row.innerHTML = `
     <div><label>Arete *</label><input type="text" data-k="identificador" value="${esc(f.identificador || '')}" placeholder="Ej: K-107"></div>
-    <div><label>Nombre</label><input type="text" data-k="nombre" value="${esc(f.nombre || '')}"></div>
     <div><label>Sexo</label><select data-k="sexo"><option value="hembra" ${f.sexo === 'hembra' ? 'selected' : ''}>Hembra</option><option value="macho" ${f.sexo === 'macho' ? 'selected' : ''}>Macho</option></select></div>
     <div><label>Peso al nacer (kg)</label><input type="number" step="0.01" min="0" data-k="peso" value="${esc(f.peso || '')}"></div>
     <button type="button" class="icon-btn peligro" data-quitar aria-label="Quitar cría">${icon('trash', 'icon-sm')}</button>`;
@@ -241,7 +251,7 @@ function abrirCaptura({ titulo, sub, campos, animales, columna, nota, alGuardar 
         <div class="field"><label>Lote</label><select data-lote><option value="">Todos los lotes</option>${[...new Set(animales.map(a => a.lote).filter(Boolean))].sort().map(l => `<option>${esc(l)}</option>`).join('')}</select></div>
       </div>
       <div class="grid-wrap"><table class="grid-capture"><thead><tr><th>Animal</th><th>Lote</th><th>${esc(columna.nota || 'Referencia')}</th><th class="num">${esc(columna.label)}</th></tr></thead>
-      <tbody>${animales.map(a => `<tr data-id="${a.id}" data-lote="${esc(a.lote || '')}"><td>${areteHtml(a)}${a.nombre ? `<span class="nombre">${esc(a.nombre)}</span>` : ''}</td><td class="muted">${esc(a.lote || '—')}</td><td class="muted" data-ref></td>
+      <tbody>${animales.map(a => `<tr data-id="${a.id}" data-lote="${esc(a.lote || '')}"><td>${areteHtml(a)}</td><td class="muted">${esc(a.lote || '—')}</td><td class="muted" data-ref></td>
         <td class="num"><input type="number" step="${columna.paso || 'any'}" min="0" inputmode="decimal" aria-label="${esc(columna.label)} de ${esc(a.identificador)}" placeholder="${esc(columna.placeholder ? columna.placeholder(a) : '')}"></td></tr>`).join('')}</tbody></table></div>
       ${nota ? `<p class="hint" style="margin:10px 0 4px;color:var(--texto-3);font-size:12.5px">${esc(nota)}</p>` : ''}`,
     pie: `<span class="spacer" data-cuenta></span><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn btn-primary">Guardar registros</button>`,
