@@ -1,5 +1,15 @@
 // manejo.js — Actividades del hato: individuales, por lote o de todo el hato; programadas o realizadas
 
+// Actividades base. Con "Agregar otra…" se guardan actividades nuevas (Destete, Secado, Cambio de lote, Descorne…).
+const ACTIVIDADES_BASE = ['Desparasitación', 'Minerales', 'Vacuna', 'Peso'];
+const esCambioLote = t => ['cambio de lote', 'cambio lote'].includes(norm(t || '').replace(/_/g, ' ').trim());
+function actividadesDisponibles(actual) {
+  const usados = [...new Set(store.manejo.map(x => x.tipo).concat(actual ? [actual] : []))]
+    .filter(t => t && !ACTIVIDADES_BASE.includes(t))
+    .sort((a, b) => lbl('manejo', a).localeCompare(lbl('manejo', b), 'es'));
+  return [...ACTIVIDADES_BASE.map(t => [t, t]), ...usados.map(t => [t, lbl('manejo', t)])];
+}
+
 const estadoManejo = x => (x.estado === 'programado' && x.fecha < hoy()) ? 'vencido' : x.estado;
 const ambitoManejo = x => x.id_animal ? 'animal' : (x.lote ? 'lote' : 'hato');
 
@@ -12,8 +22,8 @@ registrarSeccion({
   vacio: { titulo: 'Sin actividades de manejo', texto: 'Registra lo que hiciste con el hato o programa las próximas actividades para no olvidarlas.' },
   filas: () => store.manejo,
   filtros: [
-    { id: 'q', tipo: 'buscar', placeholder: 'Animal, lote, descripción, responsable…', texto: r => [animalTexto(r.id_animal), r.lote, r.descripcion, r.responsable, r.notas] },
-    { id: 'tipo', tipo: 'select', label: 'Actividad', opciones: () => opts('manejo'), prueba: (r, v) => r.tipo === v },
+    { id: 'q', tipo: 'buscar', placeholder: 'Animal, lote, descripción, responsable…', texto: r => [lbl('manejo', r.tipo), animalTexto(r.id_animal), r.lote, r.descripcion, r.responsable, r.notas] },
+    { id: 'tipo', tipo: 'select', label: 'Actividad', opciones: () => actividadesDisponibles(), prueba: (r, v) => r.tipo === v },
     { id: 'estado', tipo: 'select', label: 'Estado', opciones: () => opts('manejo_estado'), prueba: (r, v) => estadoManejo(r) === v },
     { id: 'ambito', tipo: 'select', label: 'Aplica a', opciones: () => [['animal', 'Animales'], ['lote', 'Un lote'], ['hato', 'Todo el hato']], prueba: (r, v) => ambitoManejo(r) === v },
     { id: 'lote', tipo: 'select', label: 'Lote', opciones: () => lotes().map(x => [x, x]), prueba: (r, v) => r.lote === v || animalDe({ id_animal: r.id_animal }).lote === v },
@@ -25,7 +35,7 @@ registrarSeccion({
     { key: 'fecha', label: 'Fecha', orden: r => r.fecha, html: r => esc(fmtDate(r.fecha)) + (estadoManejo(r) !== 'realizado' ? `<span class="sub ${estadoManejo(r) === 'vencido' ? 'neg' : ''}">${esc(cuandoTexto(daysUntil(r.fecha)))}</span>` : ''), csv: r => r.fecha },
     { key: 'tipo', label: 'Actividad', texto: r => lbl('manejo', r.tipo) },
     { key: 'aplica', label: 'Aplica a', texto: r => r.id_animal ? animalTexto(r.id_animal) : (r.lote ? 'Lote ' + r.lote : 'Todo el hato'),
-      html: r => r.id_animal ? animalHtml(r.id_animal) + (r.tipo === 'cambio_lote' && r.lote ? `<span class="sub">Pasa a ${esc(r.lote)}</span>` : '') : (r.lote ? `Lote ${esc(r.lote)}` : 'Todo el hato') },
+      html: r => r.id_animal ? animalHtml(r.id_animal) + (esCambioLote(r.tipo) && r.lote ? `<span class="sub">Pasa a ${esc(r.lote)}</span>` : '') : (r.lote ? `Lote ${esc(r.lote)}` : 'Todo el hato') },
     { key: 'desc', label: 'Descripción', clase: 'wrap', texto: r => r.descripcion },
     { key: 'resp', label: 'Responsable', texto: r => r.responsable },
     { key: 'costo', label: 'Costo', clase: 'num', orden: r => r.costo == null ? null : Number(r.costo), html: r => r.costo == null ? '' : fmtMoney(r.costo), csv: r => r.costo },
@@ -63,26 +73,34 @@ registrarSeccion({
 
 function formManejo(x) {
   const edit = !!x;
+  const tipoDe = v => v.tipo === '__otra__' ? (v.tipo_otro || '') : v.tipo;
   abrirFormulario({
     titulo: edit ? 'Editar actividad' : 'Registrar actividad', tam: 'wide',
-    sub: 'Destete, secado y cambio de lote actualizan al animal cuando la actividad queda como realizada.',
+    sub: 'Puedes aplicarla a varios animales a la vez. Si agregas Destete, Secado o Cambio de lote, el animal se actualiza al quedar realizada.',
     valores: edit ? { ...x, ambito: ambitoManejo(x) === 'animal' ? 'animales' : ambitoManejo(x) } : { fecha: hoy(), estado: 'realizado', ambito: 'animales', animales: [] },
     campos: [
-      { name: 'tipo', label: 'Actividad', tipo: 'select', requerido: true, opciones: opts('manejo') },
+      { name: 'tipo', label: 'Actividad', tipo: 'select', requerido: true, opciones: () => [...actividadesDisponibles(x?.tipo), ['__otra__', '+ Agregar otra…']] },
+      { name: 'tipo_otro', label: 'Nombre de la nueva actividad', tipo: 'text', requerido: true, placeholder: 'Ej: Destete, Secado, Descorne', mostrarSi: v => v.tipo === '__otra__' },
       { name: 'estado', label: 'Estado', tipo: 'select', sinVacio: true, opciones: [['realizado', 'Realizada'], ['programado', 'Programada']] },
       { name: 'fecha', label: 'Fecha', tipo: 'date', requerido: true },
       { name: 'ambito', label: 'Aplica a', tipo: 'select', sinVacio: true, opciones: [['animales', 'Animales específicos'], ['lote', 'Un lote completo'], ['hato', 'Todo el hato']] },
       { name: 'animales', label: 'Animales', tipo: 'animales', requerido: true, mostrarSi: v => v.ambito === 'animales' && !edit, opciones: () => animalesActivos().sort((a, b) => a.identificador.localeCompare(b.identificador, 'es', { numeric: true })).map(opcionAnimal) },
       { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, mostrarSi: v => v.ambito === 'animales' && edit, opciones: () => store.animales.map(a => [a.id, animalTexto(a.id)]) },
-      { name: 'lote', label: 'Lote', tipo: 'text', lista: lotes, requerido: true, mostrarSi: v => v.ambito === 'lote' || v.tipo === 'cambio_lote', ayuda: 'En un cambio de lote, escribe el lote de destino.' },
+      { name: 'lote', label: 'Lote', tipo: 'text', lista: lotes, requerido: true, mostrarSi: v => v.ambito === 'lote' || esCambioLote(tipoDe(v)), ayuda: 'En un cambio de lote, escribe el lote de destino.' },
       { name: 'descripcion', label: 'Descripción', tipo: 'textarea', placeholder: 'Qué se hizo o qué se debe hacer' },
       { name: 'responsable', label: 'Responsable', tipo: 'text' },
       { name: 'costo', label: edit ? 'Costo ($)' : 'Costo por registro ($)', tipo: 'number', min: 0, paso: '0.01' },
       { name: 'notas', label: 'Notas', tipo: 'textarea' },
     ],
-    validar: v => v.tipo === 'cambio_lote' && v.ambito !== 'animales' ? { ambito: 'El cambio de lote se aplica a animales específicos.' } : null,
+    validar: v => esCambioLote(tipoDe(v)) && v.ambito !== 'animales' ? { ambito: 'El cambio de lote se aplica a animales específicos.' } : null,
     alGuardar: async v => {
-      const base = { tipo: v.tipo, estado: v.estado, fecha: v.fecha, lote: (v.ambito === 'lote' || v.tipo === 'cambio_lote') ? v.lote : null, descripcion: v.descripcion, responsable: v.responsable, costo: v.costo, notas: v.notas };
+      let tipo = v.tipo;
+      if (tipo === '__otra__') {
+        const nuevo = v.tipo_otro.charAt(0).toUpperCase() + v.tipo_otro.slice(1);
+        const existente = actividadesDisponibles().find(([val, l]) => norm(l) === norm(nuevo));
+        tipo = existente ? existente[0] : nuevo;
+      }
+      const base = { tipo, estado: v.estado, fecha: v.fecha, lote: (v.ambito === 'lote' || esCambioLote(tipo)) ? v.lote : null, descripcion: v.descripcion, responsable: v.responsable, costo: v.costo, notas: v.notas };
       if (edit) {
         const { error } = await db.from('manejo').update({ ...base, id_animal: v.ambito === 'animales' ? v.id_animal : null }).eq('id', x.id);
         if (error) throw error;
