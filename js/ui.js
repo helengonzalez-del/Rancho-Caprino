@@ -104,12 +104,21 @@ function abrirFormulario({ titulo, sub, campos, valores = {}, etiqueta = 'Guarda
       sel.value = lista.some(([val]) => val === actual) ? actual : '';
       v[c.name] = sel.value || null;
     });
+    // Campos calculados a partir de otros (por ejemplo, el ingreso = precio × cantidad).
+    // Si la función devuelve undefined, el campo se captura a mano.
+    campos.filter(c => c.calculado).forEach(c => {
+      const el = cont(c.name).querySelector('input');
+      const r = c.calculado(v);
+      if (r === undefined) { el.readOnly = false; return; }
+      el.readOnly = true; el.value = r == null ? '' : String(r); v[c.name] = r;
+    });
+
     campos.forEach(c => { if (c.mostrarSi) { const el = cont(c.name); if (el) el.hidden = !c.mostrarSi(v); } });
     const out = {};
     campos.forEach(c => { if (['info', 'section'].includes(c.tipo)) return; const el = cont(c.name); if (!el.hidden) out[c.name] = v[c.name]; });
     campos.filter(c => c.tipo === 'info').forEach(c => {
       const el = cont(c.name); const r = c.calcular ? c.calcular(out) : '';
-      el.hidden = el.hidden || !r;
+      el.hidden = !r || (c.mostrarSi ? !c.mostrarSi(out) : false);
       const txt = r && r.texto !== undefined ? r.texto : r;
       el.textContent = txt || ''; el.classList.toggle('aviso', !!(r && r.aviso));
     });
