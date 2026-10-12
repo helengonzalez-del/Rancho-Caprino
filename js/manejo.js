@@ -15,7 +15,7 @@ const ambitoManejo = x => x.id_animal ? 'animal' : (x.lote ? 'lote' : 'hato');
 
 registrarSeccion({
   key: 'manejo', titulo: 'Manejo', icono: 'clipboard',
-  subtitulo: 'Descorne, destete, secado, cambios de lote, recorte de pezuñas y demás actividades, realizadas o programadas.',
+  subtitulo: 'Vacunas, Desparacitación.',
   botones: [{ label: 'Registrar actividad', primario: true, accion: () => formManejo() }],
   orden: { key: 'fecha', dir: 'desc' },
   csv: 'manejo',

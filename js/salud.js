@@ -28,7 +28,7 @@ function celdaProxima(s) {
 
 registrarSeccion({
   key: 'salud', titulo: 'Salud', icono: 'health',
-  subtitulo: 'Vacunas, desparasitaciones, enfermedades y tratamientos. Controla los días de retiro de leche y carne.',
+  subtitulo: 'Enfermedades y tratamientos.',
   botones: [{ label: 'Registrar evento', primario: true, accion: () => formSalud() }],
   orden: { key: 'fecha', dir: 'desc' },
   csv: 'salud',
