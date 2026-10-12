@@ -15,7 +15,7 @@ const ambitoManejo = x => x.id_animal ? 'animal' : (x.lote ? 'lote' : 'hato');
 
 registrarSeccion({
   key: 'manejo', titulo: 'Manejo', icono: 'clipboard',
-  subtitulo: 'Vacunas, Desparacitación.',
+  subtitulo: 'Vacunas, Desparasitaciones.',
   botones: [{ label: 'Registrar actividad', primario: true, accion: () => formManejo() }],
   orden: { key: 'fecha', dir: 'desc' },
   csv: 'manejo',
