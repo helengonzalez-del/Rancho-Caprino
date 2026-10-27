@@ -93,7 +93,7 @@ h1, h2, h3 { font-weight: 600; line-height: 1.2; }
   display: flex; align-items: center; gap: 12px;
   padding: 20px 18px 18px;
 }
-.brand img { width: 42px; height: 42px; border-radius: 10px; flex: none; }
+.brand img { width: 42px; height: 42px; flex: none; }
 .brand-name { font-family: var(--fuente-titulo); font-size: 18px; font-weight: 600; line-height: 1.15; color: #fff; }
 .brand-sub  { font-size: 12px; color: rgba(241,231,211,.62); margin-top: 2px; }
 
