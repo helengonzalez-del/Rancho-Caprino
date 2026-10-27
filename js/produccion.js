@@ -12,7 +12,7 @@ registrarSeccion({
   orden: { key: 'fecha', dir: 'desc' },
   csv: 'pesajes',
   vacio: { titulo: 'Sin pesajes registrados', texto: 'Registra el peso de tus animales para ver su crecimiento y ganancia diaria.' },
-  filas: () => store.pesajes,
+  filas: () => datosE().pesajes,
   filtros: [
     { id: 'q', tipo: 'buscar', placeholder: 'Arete, nombre u observaciones…', texto: r => [animalTexto(r.id_animal), r.observaciones] },
     { id: 'tipo', tipo: 'select', label: 'Tipo de pesaje', opciones: () => opts('pesaje'), prueba: (r, v) => r.tipo === v },
@@ -64,7 +64,7 @@ function formPeso(p) {
     titulo: edit ? 'Editar pesaje' : 'Registrar peso',
     valores: edit ? p : { fecha: hoy(), tipo: 'rutina' },
     campos: [
-      { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, full: true, opciones: () => store.animales.filter(a => a.estado === 'activo' || a.id === p?.id_animal).map(a => [a.id, animalTexto(a.id)]) },
+      { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, full: true, opciones: () => animalesE().filter(a => a.estado === 'activo' || a.id === p?.id_animal).map(a => [a.id, animalTexto(a.id)]) },
       { name: 'fecha', label: 'Fecha', tipo: 'date', requerido: true },
       { name: 'peso', label: 'Peso (kg)', tipo: 'number', requerido: true, min: 0.01, paso: '0.01' },
       { name: 'tipo', label: 'Tipo de pesaje', tipo: 'select', sinVacio: true, opciones: opts('pesaje') },

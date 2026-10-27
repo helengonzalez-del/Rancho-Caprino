@@ -7,7 +7,7 @@ function ventanasRetiro() {
 }
 function lecheFilas() {
   const v = ventanasRetiro();
-  return store.leche.map(l => ({ ...l, _retiro: (v.get(l.id_animal) || []).some(([a, b]) => l.fecha >= a && l.fecha <= b) }));
+  return datosE().leche.map(l => ({ ...l, _retiro: (v.get(l.id_animal) || []).some(([a, b]) => l.fecha >= a && l.fecha <= b) }));
 }
 
 registrarSeccion({
@@ -97,7 +97,7 @@ function formLeche(l) {
     titulo: edit ? 'Editar registro de leche' : 'Registrar ordeño',
     valores: edit ? l : { fecha: hoy(), turno: new Date().getHours() >= 12 ? 'tarde' : 'manana', destino: 'venta' },
     campos: [
-      { name: 'id_animal', label: 'Cabra', tipo: 'select', requerido: true, full: true, opciones: () => store.animales.filter(a => a.sexo === 'hembra' && (a.estado === 'activo' || a.id === l?.id_animal)).map(a => [a.id, animalTexto(a.id)]) },
+      { name: 'id_animal', label: 'Cabra', tipo: 'select', requerido: true, full: true, opciones: () => animalesE().filter(a => a.sexo === 'hembra' && (a.estado === 'activo' || a.id === l?.id_animal)).map(a => [a.id, animalTexto(a.id)]) },
       { name: 'fecha', label: 'Fecha', tipo: 'date', requerido: true },
       { name: 'turno', label: 'Turno', tipo: 'select', sinVacio: true, opciones: opts('turno') },
       { name: 'litros', label: 'Litros', tipo: 'number', requerido: true, min: 0, paso: '0.01' },

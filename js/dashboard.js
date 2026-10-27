@@ -36,11 +36,11 @@ function prepararCaja(cajaId, canvasId, hayDatos, mensaje) {
 }
 
 function htmlDashboard() {
-  const panel = (span, titulo, notaId, cajaId, extra = '') => `<div class="panel ${span}"><div class="panel-head"><span class="panel-title">${titulo}</span><span class="panel-note" id="${notaId}"></span></div><div class="chart-box ${extra}" id="${cajaId}"></div></div>`;
+  const panel = (span, titulo, notaId, cajaId, extra = '') => `<div class="panel ${span}"><div class="panel-head"><span class="panel-title" id="t-${cajaId}">${titulo}</span><span class="panel-note" id="${notaId}"></span></div><div class="chart-box ${extra}" id="${cajaId}"></div></div>`;
   return `
   <section class="view" id="view-dashboard" hidden aria-labelledby="h-dashboard">
     <header class="view-head">
-      <div><h1 id="h-dashboard">Dashboard</h1><p class="view-sub" id="dash-sub"></p></div>
+      <div><div class="esp-tag" id="esp-dashboard"></div><h1 id="h-dashboard">Dashboard</h1><p class="view-sub" id="dash-sub"></p></div>
       <div class="period" role="group" aria-label="Periodo de análisis">${PERIODOS.map(([v, l]) => `<button type="button" data-periodo="${v}" aria-pressed="${v === periodoDash}">${l}</button>`).join('')}</div>
     </header>
     <div class="summary kpis" id="kpis"></div>
@@ -84,25 +84,33 @@ function porMes(filas, fecha, valor, mesesMax = 12) {
 
 function renderDashboard() {
   const desde = desdePeriodo();
-  const activos = store.animales.filter(a => a.estado === 'activo');
-  document.getElementById('dash-sub').textContent = `Situación al ${fmtDate(hoy())}. Los indicadores de actividad consideran ${periodoDash === 'todo' ? 'todo el historial' : 'los últimos ' + PERIODOS.find(p => p[0] === periodoDash)[1]}.`;
+  const D = datosE();
+  const activos = D.animales.filter(a => a.estado === 'activo');
+  const general = esp.actual === 'todos', ovino = esp.actual === 'ovino';
+  const tag = document.getElementById('esp-dashboard');
+  tag.textContent = general ? 'Caprinos y ovinos' : ESPECIES[esp.actual]; tag.dataset.esp = esp.actual;
+  document.getElementById('h-dashboard').textContent = general ? 'Dashboard general' : 'Resumen del sistema';
+  document.getElementById('dash-sub').textContent = `${general ? 'Suma de los dos sistemas. ' : ''}Situación al ${fmtDate(hoy())}. Los indicadores de actividad consideran ${periodoDash === 'todo' ? 'todo el historial' : 'los últimos ' + PERIODOS.find(p => p[0] === periodoDash)[1]}.`;
 
   // ---------- KPIs ----------
   const hembras = activos.filter(a => a.sexo === 'hembra').length;
   const gest = activos.filter(a => a.gestante);
-  const parto30 = store.empadres.filter(e => vigente(e) && diasParto(e) != null && diasParto(e) >= 0 && diasParto(e) <= 30).length;
-  const leche7 = store.leche.filter(l => l.fecha > addDays(hoy(), -7));
+  const parto30 = D.empadres.filter(e => vigente(e) && diasParto(e) != null && diasParto(e) >= 0 && diasParto(e) <= 30).length;
+  const leche7 = D.leche.filter(l => l.fecha > addDays(hoy(), -7));
   const dias7 = new Set(leche7.map(l => l.fecha)).size;
   const ordeno = new Set(leche7.map(l => l.id_animal)).size;
-  const partos = store.partos.filter(p => enPeriodo(p.fecha_parto, desde));
+  const partos = D.partos.filter(p => enPeriodo(p.fecha_parto, desde));
   const vivas = sum(partos, p => p.machos + p.hembras), totalN = sum(partos, p => p.total_nacidos);
-  const ventas = store.ventas.filter(v => enPeriodo(v.fecha, desde));
+  const ventas = D.ventas.filter(v => enPeriodo(v.fecha, desde));
   const util = sum(ventas, v => v.utilidad);
-  const abiertos = store.salud.filter(s => s.estado === 'abierto');
-  const enRet = new Set(store.salud.filter(s => retiroActivo(s, 'leche') || retiroActivo(s, 'carne')).map(s => s.id_animal));
+  const abiertos = D.salud.filter(s => s.estado === 'abierto');
+  const enRet = new Set(D.salud.filter(s => retiroActivo(s, 'leche') || retiroActivo(s, 'carne')).map(s => s.id_animal));
+  const pesados = activos.filter(a => a.ultimo_peso != null);
   const kpis = [
-    { label: 'Hato activo', valor: fmtNum(activos.length, 0), nota: `${hembras} hembras · ${activos.length - hembras} machos` },
-    { label: 'Leche por día', valor: dias7 ? fmtNum(sum(leche7, l => l.litros) / dias7, 1) : '—', unidad: 'L', nota: `Últimos 7 días · ${ordeno} cabras` },
+    { label: 'Hato activo', valor: fmtNum(activos.length, 0), nota: general ? `${activos.filter(a => a.especie === 'caprino').length} caprinos · ${activos.filter(a => a.especie === 'ovino').length} ovinos` : `${hembras} hembras · ${activos.length - hembras} machos` },
+    ovino
+      ? { label: 'Peso promedio', valor: pesados.length ? fmtNum(avg(pesados, a => Number(a.ultimo_peso)), 1) : '—', unidad: 'kg', nota: `Último pesaje · ${pesados.length} animales` }
+      : { label: 'Leche por día', valor: dias7 ? fmtNum(sum(leche7, l => l.litros) / dias7, 1) : '—', unidad: 'L', nota: `Últimos 7 días · ${ordeno} cabras${general ? ' (solo caprino)' : ''}` },
     { label: 'Hembras gestantes', valor: fmtNum(gest.length, 0), nota: `${parto30} partos en los próximos 30 días` },
     { label: 'Partos del periodo', valor: fmtNum(partos.length, 0), nota: partos.length ? `${vivas} crías vivas · ${fmtNum(totalN / partos.length, 2)} por parto` : 'Sin partos en el periodo' },
     { label: 'Utilidad de ventas', valor: fmtMoney(util), nota: `Ingresos ${fmtMoney(sum(ventas, v => v.ingreso))}`, alerta: util < 0 },
@@ -110,33 +118,47 @@ function renderDashboard() {
   ];
   document.getElementById('kpis').innerHTML = kpis.map(s => `<div class="stat ${s.alerta ? 'alerta' : ''}"><div class="stat-label">${esc(s.label)}</div><div class="stat-value">${s.valor}${s.unidad ? `<small>${esc(s.unidad)}</small>` : ''}</div><div class="stat-hint">${esc(s.nota || '')}</div></div>`).join('');
 
-  // ---------- Leche ----------
-  const lech = store.leche.filter(l => enPeriodo(l.fecha, desde));
-  const dia = {}; lech.forEach(l => { dia[l.fecha] = (dia[l.fecha] || 0) + Number(l.litros); });
-  const dias = Object.keys(dia).sort();
-  if (prepararCaja('b-leche', 'g-leche', dias.length > 0, 'No hay registros de leche en este periodo.')) {
-    if (dias.length <= 120) {
-      const vals = dias.map(d => +dia[d].toFixed(1));
-      const media = vals.map((_, i) => { const w = vals.slice(Math.max(0, i - 6), i + 1); return +(sum(w) / w.length).toFixed(1); });
-      document.getElementById('n-leche').textContent = 'Litros por día';
-      dibujarGrafica('g-leche', 'bar', dias.map(d => fmtDate(d).replace(/ \d{4}$/, '')), [
-        { type: 'bar', label: 'Litros por día', data: vals, backgroundColor: COLORES.oliva, borderRadius: 2, order: 2 },
-        { type: 'line', label: 'Promedio móvil de 7 días', data: media, borderColor: COLORES.bosque, backgroundColor: COLORES.bosque, borderWidth: 2, pointRadius: 0, tension: .3, order: 1 },
-      ], { scales: { y: { beginAtZero: true } } });
-    } else {
-      const m = {}; dias.forEach(d => { const k = d.slice(0, 7); (m[k] = m[k] || []).push(dia[d]); });
-      const ks = Object.keys(m).sort();
-      document.getElementById('n-leche').textContent = 'Promedio diario por mes';
-      dibujarGrafica('g-leche', 'bar', ks.map(fmtMonth), [{ label: 'Litros por día (promedio)', data: ks.map(k => +avg(m[k]).toFixed(1)), backgroundColor: COLORES.oliva, borderRadius: 2 }], { scales: { y: { beginAtZero: true } } });
-    }
-  } else document.getElementById('n-leche').textContent = '';
+  // ---------- Panel grande: leche (caprino) o peso por categoría (ovino) ----------
+  document.getElementById('t-b-leche').textContent = ovino ? 'Peso promedio por categoría' : general ? 'Producción de leche (caprinos)' : 'Producción de leche';
+  if (ovino) {
+    const pc = {};
+    pesados.forEach(a => { const k = a.estado_productivo ? L.estado_productivo[a.estado_productivo] : 'Sin categoría'; (pc[k] = pc[k] || []).push(Number(a.ultimo_peso)); });
+    const pk = Object.keys(pc).sort((x, y) => avg(pc[y]) - avg(pc[x]));
+    document.getElementById('n-leche').textContent = 'Último peso registrado';
+    if (prepararCaja('b-leche', 'g-leche', pk.length > 0, 'Aún no hay pesajes registrados.'))
+      dibujarGrafica('g-leche', 'bar', pk, [{ label: 'Peso promedio (kg)', data: pk.map(k => +avg(pc[k]).toFixed(1)), backgroundColor: COLORES.cuerno, borderRadius: 2 }], { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'kg' } } } });
+  } else {
+    const lech = D.leche.filter(l => enPeriodo(l.fecha, desde));
+    const dia = {}; lech.forEach(l => { dia[l.fecha] = (dia[l.fecha] || 0) + Number(l.litros); });
+    const dias = Object.keys(dia).sort();
+    if (prepararCaja('b-leche', 'g-leche', dias.length > 0, 'No hay registros de leche en este periodo.')) {
+      if (dias.length <= 120) {
+        const vals = dias.map(d => +dia[d].toFixed(1));
+        const media = vals.map((_, i) => { const w = vals.slice(Math.max(0, i - 6), i + 1); return +(sum(w) / w.length).toFixed(1); });
+        document.getElementById('n-leche').textContent = 'Litros por día';
+        dibujarGrafica('g-leche', 'bar', dias.map(d => fmtDate(d).replace(/ \d{4}$/, '')), [
+          { type: 'bar', label: 'Litros por día', data: vals, backgroundColor: COLORES.oliva, borderRadius: 2, order: 2 },
+          { type: 'line', label: 'Promedio móvil de 7 días', data: media, borderColor: COLORES.bosque, backgroundColor: COLORES.bosque, borderWidth: 2, pointRadius: 0, tension: .3, order: 1 },
+        ], { scales: { y: { beginAtZero: true } } });
+      } else {
+        const m = {}; dias.forEach(d => { const k = d.slice(0, 7); (m[k] = m[k] || []).push(dia[d]); });
+        const ks = Object.keys(m).sort();
+        document.getElementById('n-leche').textContent = 'Promedio diario por mes';
+        dibujarGrafica('g-leche', 'bar', ks.map(fmtMonth), [{ label: 'Litros por día (promedio)', data: ks.map(k => +avg(m[k]).toFixed(1)), backgroundColor: COLORES.oliva, borderRadius: 2 }], { scales: { y: { beginAtZero: true } } });
+      }
+    } else document.getElementById('n-leche').textContent = '';
+  }
 
   // ---------- Hato por categoría ----------
-  const cat = {}; activos.forEach(a => { const k = a.estado_productivo ? L.estado_productivo[a.estado_productivo] : 'Sin categoría'; cat[k] = (cat[k] || 0) + 1; });
+  const catDe = lista => { const c = {}; lista.forEach(a => { const k = a.estado_productivo ? L.estado_productivo[a.estado_productivo] : 'Sin categoría'; c[k] = (c[k] || 0) + 1; }); return c; };
+  const cat = catDe(activos);
   const ck = Object.keys(cat).sort((a, b) => cat[b] - cat[a]);
   document.getElementById('n-hato').textContent = `${activos.length} animales`;
+  const dsHato = general
+    ? ['caprino', 'ovino'].map((e, i) => { const c = catDe(activos.filter(a => a.especie === e)); return { label: e === 'caprino' ? 'Caprino' : 'Ovino', data: ck.map(k => c[k] || 0), backgroundColor: i ? COLORES.cuerno : COLORES.bosque, borderRadius: 2, stack: 's' }; })
+    : [{ label: 'Animales', data: ck.map(k => cat[k]), backgroundColor: COLORES.bosque, borderRadius: 2 }];
   if (prepararCaja('b-hato', 'g-hato', ck.length > 0, 'Aún no hay animales activos.'))
-    dibujarGrafica('g-hato', 'bar', ck, [{ label: 'Animales', data: ck.map(k => cat[k]), backgroundColor: COLORES.bosque, borderRadius: 2 }], { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } });
+    dibujarGrafica('g-hato', 'bar', ck, dsHato, { indexAxis: 'y', plugins: { legend: { display: general } }, scales: { x: { stacked: general, beginAtZero: true, ticks: { precision: 0 } }, y: { stacked: general, grid: { display: false } } } });
 
   // ---------- Partos por mes ----------
   const pm = {}; partos.forEach(p => { const k = p.fecha_parto.slice(0, 7); pm[k] = pm[k] || { v: 0, m: 0, n: 0 }; pm[k].v += p.machos + p.hembras; pm[k].m += p.nacidos_muertos; pm[k].n++; });
@@ -160,14 +182,14 @@ function renderDashboard() {
     ], { scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + fmtNum(v, 0) } } }, plugins: { tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmtMoney(c.parsed.y)}` } } } });
 
   // ---------- Salud por tipo ----------
-  const sal = store.salud.filter(s => enPeriodo(s.fecha, desde)); const st = {}; sal.forEach(s => { st[s.tipo] = (st[s.tipo] || 0) + 1; });
+  const sal = D.salud.filter(s => enPeriodo(s.fecha, desde)); const st = {}; sal.forEach(s => { st[s.tipo] = (st[s.tipo] || 0) + 1; });
   const sk = Object.keys(st).sort((a, b) => st[b] - st[a]);
   document.getElementById('n-salud').textContent = `${sal.length} eventos`;
   if (prepararCaja('b-salud', 'g-salud', sk.length > 0, 'No hay eventos de salud en este periodo.'))
     dibujarGrafica('g-salud', 'bar', sk.map(k => lbl('salud', k)), [{ label: 'Eventos', data: sk.map(k => st[k]), backgroundColor: COLORES.cuerno, borderRadius: 2 }], { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } });
 
   // ---------- GDP ----------
-  const pes = store.pesajes.filter(p => p.gdp_g != null && enPeriodo(p.fecha, desde)); const gm = {};
+  const pes = D.pesajes.filter(p => p.gdp_g != null && enPeriodo(p.fecha, desde)); const gm = {};
   pes.forEach(p => { const k = p.fecha.slice(0, 7); (gm[k] = gm[k] || []).push(Number(p.gdp_g)); });
   const gk = Object.keys(gm).sort().slice(-12);
   document.getElementById('n-gdp').textContent = pes.length ? `Promedio ${fmtNum(avg(pes, p => Number(p.gdp_g)), 0)} g/día` : '';
@@ -177,16 +199,16 @@ function renderDashboard() {
   // ---------- Listas ----------
   const fila = (izq, sub, der, subDer, tono) => `<div class="list-row"><div class="grow">${izq}${sub ? `<span class="sub">${sub}</span>` : ''}</div><div class="when ${tono || ''}">${der}${subDer ? `<small>${subDer}</small>` : ''}</div></div>`;
 
-  const ep = store.empadres.filter(vigente).sort((a, b) => a.fecha_parto_estimada.localeCompare(b.fecha_parto_estimada)).slice(0, 7);
+  const ep = D.empadres.filter(vigente).sort((a, b) => a.fecha_parto_estimada.localeCompare(b.fecha_parto_estimada)).slice(0, 7);
   document.getElementById('l-partos').innerHTML = ep.length ? ep.map(e => { const d = diasParto(e); return fila(animalHtml(e.id_hembra), `${lbl('empadre', e.estado)}${e.id_macho ? ' · macho ' + (animal(e.id_macho)?.identificador || '') : ''}`, esc(fmtDate(e.fecha_parto_estimada)), cuandoTexto(d), d < 0 ? 'neg' : d <= 15 ? 'warn' : ''); }).join('') : '<div class="list-empty">No hay hembras en gestación.</div>';
 
   const grupos = {};
-  store.salud.filter(s => proximaPendiente(s) && daysUntil(s.proxima_fecha) <= 30).forEach(s => {
+  D.salud.filter(s => proximaPendiente(s) && daysUntil(s.proxima_fecha) <= 30).forEach(s => {
     const k = [s.tipo, tratamientoDe(s) || '', s.proxima_fecha].join('|');
     (grupos[k] = grupos[k] || { fecha: s.proxima_fecha, titulo: `${lbl('salud', s.tipo)}${tratamientoDe(s) ? ' · ' + tratamientoDe(s) : ''}`, animales: [], origen: 'Salud' }).animales.push(s.id_animal);
   });
   const pend = Object.values(grupos);
-  store.manejo.filter(x => x.estado === 'programado').forEach(x => pend.push({ fecha: x.fecha, titulo: lbl('manejo', x.tipo), animales: x.id_animal ? [x.id_animal] : [], lote: x.lote, origen: 'Manejo' }));
+  D.manejo.filter(x => x.estado === 'programado').forEach(x => pend.push({ fecha: x.fecha, titulo: lbl('manejo', x.tipo), animales: x.id_animal ? [x.id_animal] : [], lote: x.lote, origen: 'Manejo' }));
   pend.sort((a, b) => a.fecha.localeCompare(b.fecha));
   document.getElementById('l-pend').innerHTML = pend.length ? pend.slice(0, 8).map(p => {
     const d = daysUntil(p.fecha);
@@ -196,8 +218,8 @@ function renderDashboard() {
 
   const aten = [];
   abiertos.forEach(s => aten.push({ id: s.id_animal, sub: s.diagnostico || lbl('salud', s.tipo), der: 'Caso abierto', subDer: fmtDate(s.fecha), tono: 'warn', orden: 0 }));
-  store.salud.filter(s => retiroActivo(s, 'leche')).forEach(s => aten.push({ id: s.id_animal, sub: tratamientoDe(s) || lbl('salud', s.tipo), der: 'Sin leche hasta ' + fmtDate(s.fin_retiro_leche), subDer: cuandoTexto(daysUntil(s.fin_retiro_leche)), tono: 'neg', orden: 1 }));
-  store.salud.filter(s => retiroActivo(s, 'carne')).forEach(s => aten.push({ id: s.id_animal, sub: tratamientoDe(s) || lbl('salud', s.tipo), der: 'Sin carne hasta ' + fmtDate(s.fin_retiro_carne), subDer: cuandoTexto(daysUntil(s.fin_retiro_carne)), tono: 'neg', orden: 2 }));
+  D.salud.filter(s => retiroActivo(s, 'leche')).forEach(s => aten.push({ id: s.id_animal, sub: tratamientoDe(s) || lbl('salud', s.tipo), der: 'Sin leche hasta ' + fmtDate(s.fin_retiro_leche), subDer: cuandoTexto(daysUntil(s.fin_retiro_leche)), tono: 'neg', orden: 1 }));
+  D.salud.filter(s => retiroActivo(s, 'carne')).forEach(s => aten.push({ id: s.id_animal, sub: tratamientoDe(s) || lbl('salud', s.tipo), der: 'Sin carne hasta ' + fmtDate(s.fin_retiro_carne), subDer: cuandoTexto(daysUntil(s.fin_retiro_carne)), tono: 'neg', orden: 2 }));
   aten.sort((a, b) => a.orden - b.orden);
   document.getElementById('l-salud').innerHTML = aten.length ? aten.slice(0, 8).map(a => fila(animalHtml(a.id), esc(a.sub), esc(a.der), esc(a.subDer), a.tono)).join('') : '<div class="list-empty">Sin casos abiertos ni retiros vigentes.</div>';
 }

@@ -15,12 +15,12 @@ const ambitoManejo = x => x.id_animal ? 'animal' : (x.lote ? 'lote' : 'hato');
 
 registrarSeccion({
   key: 'manejo', titulo: 'Manejo', icono: 'clipboard',
-  subtitulo: 'Vacunas, Desparasitaciones.',
+  subtitulo: 'Vacunas, Desparasitación.',
   botones: [{ label: 'Registrar actividad', primario: true, accion: () => formManejo() }],
   orden: { key: 'fecha', dir: 'desc' },
   csv: 'manejo',
   vacio: { titulo: 'Sin actividades de manejo', texto: 'Registra lo que hiciste con el hato o programa las próximas actividades para no olvidarlas.' },
-  filas: () => store.manejo,
+  filas: () => datosE().manejo,
   filtros: [
     { id: 'q', tipo: 'buscar', placeholder: 'Animal, lote, descripción, responsable…', texto: r => [lbl('manejo', r.tipo), animalTexto(r.id_animal), r.lote, r.descripcion, r.responsable, r.notas] },
     { id: 'tipo', tipo: 'select', label: 'Actividad', opciones: () => actividadesDisponibles(), prueba: (r, v) => r.tipo === v },
@@ -85,7 +85,7 @@ function formManejo(x) {
       { name: 'fecha', label: 'Fecha', tipo: 'date', requerido: true },
       { name: 'ambito', label: 'Aplica a', tipo: 'select', sinVacio: true, opciones: [['animales', 'Animales específicos'], ['lote', 'Un lote completo'], ['hato', 'Todo el hato']] },
       { name: 'animales', label: 'Animales', tipo: 'animales', requerido: true, mostrarSi: v => v.ambito === 'animales' && !edit, opciones: () => animalesActivos().sort((a, b) => a.identificador.localeCompare(b.identificador, 'es', { numeric: true })).map(opcionAnimal) },
-      { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, mostrarSi: v => v.ambito === 'animales' && edit, opciones: () => store.animales.map(a => [a.id, animalTexto(a.id)]) },
+      { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, mostrarSi: v => v.ambito === 'animales' && edit, opciones: () => animalesE().map(a => [a.id, animalTexto(a.id)]) },
       { name: 'lote', label: 'Lote', tipo: 'text', lista: lotes, requerido: true, mostrarSi: v => v.ambito === 'lote' || esCambioLote(tipoDe(v)), ayuda: 'En un cambio de lote, escribe el lote de destino.' },
       { name: 'descripcion', label: 'Descripción', tipo: 'textarea', placeholder: 'Qué se hizo o qué se debe hacer' },
       { name: 'responsable', label: 'Responsable', tipo: 'text' },
@@ -100,7 +100,7 @@ function formManejo(x) {
         const existente = actividadesDisponibles().find(([val, l]) => norm(l) === norm(nuevo));
         tipo = existente ? existente[0] : nuevo;
       }
-      const base = { tipo, estado: v.estado, fecha: v.fecha, lote: (v.ambito === 'lote' || esCambioLote(tipo)) ? v.lote : null, descripcion: v.descripcion, responsable: v.responsable, costo: v.costo, notas: v.notas };
+      const base = { especie: esp.actual, tipo, estado: v.estado, fecha: v.fecha, lote: (v.ambito === 'lote' || esCambioLote(tipo)) ? v.lote : null, descripcion: v.descripcion, responsable: v.responsable, costo: v.costo, notas: v.notas };
       if (edit) {
         const { error } = await db.from('manejo').update({ ...base, id_animal: v.ambito === 'animales' ? v.id_animal : null }).eq('id', x.id);
         if (error) throw error;

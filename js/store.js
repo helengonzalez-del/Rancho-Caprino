@@ -96,10 +96,31 @@ async function asegurarLeche(desde) {
 async function cargarHistorialLeche() { lecheDesde = null; await cargarTabla('leche'); _onData(); }
 
 // ---------- Consultas de apoyo ----------
+// ---------- Especie activa ----------
+// Cada sección muestra solo los datos de la especie elegida en el menú.
+// 'todos' se usa únicamente en el dashboard general.
+const esp = { actual: 'caprino' };   // 'caprino' | 'ovino' | 'todos'
+const ESPECIES = { caprino: 'Sistema caprino', ovino: 'Sistema ovino' };
+const enEsp = especie => esp.actual === 'todos' || especie === esp.actual;
+const animalesE = () => store.animales.filter(a => enEsp(a.especie));
+const deAnimal = (filas, campo) => filas.filter(r => enEsp((animalMap.get(r[campo]) || {}).especie));
+function datosE() {
+  return {
+    animales: animalesE(),
+    empadres: deAnimal(store.empadres, 'id_hembra'),
+    partos: deAnimal(store.partos, 'id_madre'),
+    pesajes: deAnimal(store.pesajes, 'id_animal'),
+    leche: deAnimal(store.leche, 'id_animal'),
+    salud: deAnimal(store.salud, 'id_animal'),
+    manejo: store.manejo.filter(x => enEsp(x.especie)),
+    ventas: store.ventas.filter(x => enEsp(x.especie)),
+  };
+}
+
 const animal = id => animalMap.get(id);
-const animalesActivos = (f) => store.animales.filter(a => a.estado === 'activo' && (!f || f(a)));
-const lotes = () => [...new Set(store.animales.map(a => a.lote).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
-const razas = () => [...new Set([...store.razas.map(r => r.nombre), ...store.animales.map(a => a.raza).filter(Boolean)])].sort((a, b) => a.localeCompare(b, 'es'));
+const animalesActivos = (f) => animalesE().filter(a => a.estado === 'activo' && (!f || f(a)));
+const lotes = () => [...new Set(animalesE().map(a => a.lote).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+const razas = () => [...new Set([...store.razas.filter(r => enEsp(r.especie)).map(r => r.nombre), ...animalesE().map(a => a.raza).filter(Boolean)])].sort((a, b) => a.localeCompare(b, 'es'));
 
 function areteHtml(a) { return `<span class="arete">${esc(a.identificador)}</span>`; }
 function animalHtml(id, conFicha = true, conNombre = true) {
@@ -118,7 +139,7 @@ function opcionAnimal(a) {
   return { id: a.id, html: areteHtml(a), meta: a.lote || '', texto: norm([a.identificador, a.lote, a.raza].join(' ')) };
 }
 
-// Retiro por medicamentos: leche o carne no aptas
+// Retiro por medicamento: leche o carne no aptas
 function retiroVigente(animalId, tipo = 'leche', fecha = hoy()) {
   const campo = tipo === 'leche' ? 'fin_retiro_leche' : 'fin_retiro_carne';
   return store.salud

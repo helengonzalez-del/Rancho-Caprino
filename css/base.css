@@ -207,3 +207,32 @@ h1, h2, h3 { font-weight: 600; line-height: 1.2; }
 }
 
 .content, .main { min-width: 0; }
+
+/* ============ SISTEMAS (caprino / ovino) EN EL MENÚ ============ */
+.nav-group-title { margin-top: 4px; }
+.nav-sistema { margin-bottom: 2px; }
+.nav-sistema-btn {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 10px 10px; border: 0; border-radius: var(--radio-sm); background: none; text-align: left;
+  color: #fff; font-weight: 600; font-size: 14px;
+}
+.nav-sistema-btn:hover { background: rgba(255,255,255,.06); }
+.nav-sistema-btn .icon { color: var(--lima-400); }
+.nav-sistema-btn .chev { margin-left: auto; width: 15px; height: 15px; color: rgba(241,231,211,.6); transition: transform .15s; }
+.nav-sistema-btn .nav-count { margin-left: auto; }
+.nav-sistema-btn .nav-count:not([hidden]) + .chev { margin-left: 8px; }
+.nav-sistema-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.nav-sistema.abierto > .nav-sistema-btn { background: rgba(255,255,255,.05); }
+.nav-sub { margin: 2px 0 8px 17px; padding-left: 8px; border-left: 1px solid rgba(255,255,255,.12); }
+.nav-sub .nav-item { padding: 7px 10px; font-size: 13.5px; }
+.nav-sub .nav-item[aria-current="page"]::before { left: -9px; top: 6px; bottom: 6px; }
+
+.esp-tag {
+  display: inline-block; margin-bottom: 6px; padding: 1px 9px; border-radius: 3px;
+  font-size: 12.5px; font-weight: 500;
+  background: var(--oliva-100); color: var(--bosque-800); border: 1px solid #c7d6a0;
+}
+.esp-tag[data-esp="ovino"] { background: #f3ead8; color: #6b5226; border-color: #dfcfa8; }
+.esp-tag[data-esp="todos"] { background: var(--neutro-bg); color: var(--neutro); border-color: var(--neutro-borde); }
+.esp-tag:empty { display: none; }
+.crumbs { font-size: 13px; color: var(--texto-3); }

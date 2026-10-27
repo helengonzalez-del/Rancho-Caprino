@@ -1,7 +1,7 @@
 {
-  "name": "Rancho Caprino",
-  "short_name": "Rancho Caprino",
-  "description": "Sistema de gestión para rancho caprino",
+  "name": "Sistema ganadero",
+  "short_name": "Ganadero",
+  "description": "Gestión de caprinos y ovinos",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -13,3 +13,4 @@
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
+

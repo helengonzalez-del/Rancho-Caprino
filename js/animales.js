@@ -14,7 +14,7 @@ registrarSeccion({
   orden: { key: 'arete', dir: 'asc' },
   csv: 'animales',
   vacio: { titulo: 'Todavía no hay animales', texto: 'Registra el primer animal del hato para empezar a llevar su historial.' },
-  filas: () => store.animales,
+  filas: animalesE,
   filtros: [
     { id: 'q', tipo: 'buscar', placeholder: 'Arete, padres, lote, raza…', texto: r => [r.identificador, r.nombre_madre, r.nombre_padre, animalTexto(r.id_madre), animalTexto(r.id_padre), r.lote, r.raza] },
     { id: 'sexo', tipo: 'select', label: 'Sexo', opciones: () => opts('sexo'), prueba: (r, v) => r.sexo === v },
@@ -64,8 +64,8 @@ function categoriasPorSexo(sexo) {
 
 function formAnimal(a) {
   const edit = !!a;
-  const hembras = store.animales.filter(x => x.sexo === 'hembra' && x.id !== a?.id).map(x => [x.id, animalTexto(x.id)]);
-  const machos = store.animales.filter(x => x.sexo === 'macho' && x.id !== a?.id).map(x => [x.id, animalTexto(x.id)]);
+  const hembras = animalesE().filter(x => x.sexo === 'hembra' && x.id !== a?.id).map(x => [x.id, animalTexto(x.id)]);
+  const machos = animalesE().filter(x => x.sexo === 'macho' && x.id !== a?.id).map(x => [x.id, animalTexto(x.id)]);
   abrirFormulario({
     titulo: edit ? `Editar ${a.identificador}` : 'Registrar animal',
     sub: edit ? 'Los cambios se reflejan de inmediato en todas las secciones.' : 'Los campos con * son obligatorios.',
@@ -100,12 +100,12 @@ function formAnimal(a) {
       let raza = v.raza;
       if (raza === '__nueva__') {
         raza = v.raza_nueva;
-        const { error } = await db.from('razas').upsert({ nombre: raza }, { onConflict: 'nombre' });
+        const { error } = await db.from('razas').upsert({ nombre: raza, especie: esp.actual }, { onConflict: 'nombre,especie' });
         if (error) throw error;
       }
       const hembra = v.sexo === 'hembra';
       const p = {
-        identificador: v.identificador, sexo: v.sexo, raza: raza || null,
+        especie: edit ? a.especie : esp.actual, identificador: v.identificador, sexo: v.sexo, raza: raza || null,
         proposito: v.proposito, fecha_nacimiento: v.fecha_nacimiento, fecha_ingreso: v.fecha_ingreso || hoy(), origen: v.origen,
         estado: v.estado, estado_productivo: v.estado_productivo, lote: v.lote, partos_previos: hembra ? (v.partos_previos || 0) : 0,
         fecha_baja: v.fecha_baja ?? null, motivo_baja: v.motivo_baja ?? null,

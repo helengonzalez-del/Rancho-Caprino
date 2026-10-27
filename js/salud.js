@@ -28,12 +28,12 @@ function celdaProxima(s) {
 
 registrarSeccion({
   key: 'salud', titulo: 'Salud', icono: 'health',
-  subtitulo: 'Enfermedades y tratamientos.',
+  subtitulo: 'Enfermedades, tratamientos y procedimientos del hato. Controla los días de retiro de leche y carne.',
   botones: [{ label: 'Registrar evento', primario: true, accion: () => formSalud() }],
   orden: { key: 'fecha', dir: 'desc' },
   csv: 'salud',
   vacio: { titulo: 'Sin eventos de salud', texto: 'Registra vacunas, desparasitaciones y tratamientos; puedes aplicarlos a varios animales a la vez.' },
-  filas: () => store.salud,
+  filas: () => datosE().salud,
   filtros: [
     { id: 'q', tipo: 'buscar', placeholder: 'Animal, diagnóstico, medicamento, responsable…', texto: r => [animalTexto(r.id_animal), lbl('salud', r.tipo), r.diagnostico, tratamientoDe(r), r.responsable, r.notas] },
     { id: 'tipo', tipo: 'select', label: 'Tipo de evento', opciones: () => tiposDisponibles(), prueba: (r, v) => r.tipo === v },
@@ -105,7 +105,7 @@ function formSalud(s) {
     sub: edit ? '' : 'Puedes aplicarlo a varios animales a la vez (por ejemplo, despezuñar a todo un lote).',
     valores: edit ? { ...s, tratamiento: tratamientoDe(s) } : { fecha: hoy(), estado: 'cerrado', animales: [] },
     campos: [
-      { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, full: true, mostrarSi: () => edit, opciones: () => store.animales.map(a => [a.id, animalTexto(a.id)]) },
+      { name: 'id_animal', label: 'Animal', tipo: 'select', requerido: true, full: true, mostrarSi: () => edit, opciones: () => animalesE().map(a => [a.id, animalTexto(a.id)]) },
       { name: 'animales', label: 'Animales', tipo: 'animales', requerido: true, mostrarSi: () => !edit, opciones: () => animalesActivos().sort((a, b) => a.identificador.localeCompare(b.identificador, 'es', { numeric: true })).map(opcionAnimal) },
       { name: 'fecha', label: 'Fecha', tipo: 'date', requerido: true },
       { name: 'tipo', label: 'Tipo de evento', tipo: 'select', requerido: true, opciones: () => [...tiposDisponibles(s?.tipo), ['__otra__', '+ Agregar otra…']] },

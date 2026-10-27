@@ -3,7 +3,7 @@
 function ventasFilas() {
   const porVenta = {};
   store.venta_animales.forEach(va => (porVenta[va.venta_id] = porVenta[va.venta_id] || []).push(va.animal_id));
-  return store.ventas.map(v => ({ ...v, _animales: porVenta[v.id] || [] }));
+  return datosE().ventas.map(v => ({ ...v, _animales: porVenta[v.id] || [] }));
 }
 
 registrarSeccion({
@@ -16,7 +16,7 @@ registrarSeccion({
   filas: ventasFilas,
   filtros: [
     { id: 'q', tipo: 'buscar', placeholder: 'Cliente, notas o arete…', texto: r => [r.cliente, r.notas, ...r._animales.map(animalTexto)] },
-    { id: 'tipo', tipo: 'select', label: 'Tipo de venta', opciones: () => opts('venta'), prueba: (r, v) => r.tipo === v },
+    { id: 'tipo', tipo: 'select', label: 'Tipo de venta', opciones: () => opts('venta').filter(([k]) => esp.actual !== 'ovino' || k !== 'leche'), prueba: (r, v) => r.tipo === v },
     { id: 'cliente', tipo: 'select', label: 'Cliente', opciones: () => [...new Set(store.ventas.map(v => v.cliente).filter(Boolean))].sort().map(x => [x, x]), prueba: (r, v) => r.cliente === v },
     { id: 'res', tipo: 'select', label: 'Resultado', opciones: () => [['ganancia', 'Con utilidad'], ['perdida', 'Con pérdida']], prueba: (r, v) => v === 'ganancia' ? r.utilidad >= 0 : r.utilidad < 0 },
     { id: 'fechas', tipo: 'fechas', label: 'Fecha', valor: r => r.fecha },
@@ -97,9 +97,9 @@ function formVenta(venta) {
     campos: [
       { name: 'fecha', label: 'Fecha', tipo: 'date', requerido: true },
       { name: 'cliente', label: 'Cliente', tipo: 'text', lista: () => [...new Set(store.ventas.map(v => v.cliente).filter(Boolean))] },
-      { name: 'tipo', label: 'Tipo de venta', tipo: 'select', requerido: true, opciones: opts('venta') },
+      { name: 'tipo', label: 'Tipo de venta', tipo: 'select', requerido: true, opciones: () => opts('venta').filter(([k]) => esp.actual !== 'ovino' || k !== 'leche') },
       { name: 'animales', label: 'Animales vendidos', tipo: 'animales', requerido: true, mostrarSi: conAnimales,
-        opciones: () => store.animales.filter(a => a.estado === 'activo' || originales.includes(a.id)).sort((a, b) => a.identificador.localeCompare(b.identificador, 'es', { numeric: true })).map(opcionAnimal) },
+        opciones: () => animalesE().filter(a => a.estado === 'activo' || originales.includes(a.id)).sort((a, b) => a.identificador.localeCompare(b.identificador, 'es', { numeric: true })).map(opcionAnimal) },
       { name: 'peso_vivo', label: 'Peso vivo total (kg)', tipo: 'number', min: 0.01, paso: '0.1', mostrarSi: v => v.tipo === 'carne' },
       { name: 'peso_canal', label: 'Peso en canal total (kg)', tipo: 'number', min: 0.01, paso: '0.1', mostrarSi: v => v.tipo === 'carne' },
       { name: 'base_precio', label: 'El precio por kg es sobre', tipo: 'select', sinVacio: true, mostrarSi: v => v.tipo === 'carne', opciones: [['vivo', 'Peso vivo (en pie)'], ['canal', 'Peso en canal']] },
@@ -126,7 +126,7 @@ function formVenta(venta) {
     },
     alGuardar: async v => {
       const precio = v.tipo === 'carne' ? v.precio_kg : v.tipo === 'leche' ? v.precio_litro : v.tipo === 'pie_cria' ? v.precio_animal : null;
-      const d = { fecha: v.fecha, cliente: v.cliente, tipo: v.tipo, ingreso: v.ingreso, costo: v.costo || 0, precio_unitario: precio ?? null, base_precio: v.tipo === 'carne' ? v.base_precio : null, litros: v.tipo === 'leche' ? v.litros : null, peso_vivo: v.tipo === 'carne' ? (v.peso_vivo ?? null) : null, peso_canal: v.tipo === 'carne' ? (v.peso_canal ?? null) : null, notas: v.notas };
+      const d = { especie: esp.actual, fecha: v.fecha, cliente: v.cliente, tipo: v.tipo, ingreso: v.ingreso, costo: v.costo || 0, precio_unitario: precio ?? null, base_precio: v.tipo === 'carne' ? v.base_precio : null, litros: v.tipo === 'leche' ? v.litros : null, peso_vivo: v.tipo === 'carne' ? (v.peso_vivo ?? null) : null, peso_canal: v.tipo === 'carne' ? (v.peso_canal ?? null) : null, notas: v.notas };
       const nuevos = conAnimales(v) ? (v.animales || []) : [];
       let id = venta?.id;
       if (edit) { const { error } = await db.from('ventas').update(d).eq('id', id); if (error) throw error; }

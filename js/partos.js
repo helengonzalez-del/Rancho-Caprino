@@ -2,9 +2,9 @@
 
 function partosConIntervalo() {
   const porMadre = {};
-  store.partos.forEach(p => (porMadre[p.id_madre] = porMadre[p.id_madre] || []).push(p));
+  datosE().partos.forEach(p => (porMadre[p.id_madre] = porMadre[p.id_madre] || []).push(p));
   Object.values(porMadre).forEach(l => l.sort((a, b) => a.fecha_parto.localeCompare(b.fecha_parto)));
-  return store.partos.map(p => {
+  return datosE().partos.map(p => {
     const l = porMadre[p.id_madre], i = l.indexOf(p);
     return { ...p, _intervalo: i > 0 ? diffDays(p.fecha_parto, l[i - 1].fecha_parto) : null };
   });
@@ -21,7 +21,7 @@ registrarSeccion({
   filas: partosConIntervalo,
   filtros: [
     { id: 'q', tipo: 'buscar', placeholder: 'Madre, padre, notas…', texto: r => [animalTexto(r.id_madre), animalTexto(padreDeParto(r)), r.notas] },
-    { id: 'madre', tipo: 'select', label: 'Madre', opciones: () => [...new Set(store.partos.map(p => p.id_madre))].map(id => [id, animalTexto(id)]), prueba: (r, v) => r.id_madre === v },
+    { id: 'madre', tipo: 'select', label: 'Madre', opciones: () => [...new Set(datosE().partos.map(p => p.id_madre))].map(id => [id, animalTexto(id)]), prueba: (r, v) => r.id_madre === v },
     { id: 'tipo', tipo: 'select', label: 'Tipo de parto', opciones: () => opts('parto'), prueba: (r, v) => r.tipo_parto === v },
     { id: 'dif', tipo: 'select', label: 'Dificultad', opciones: () => opts('dificultad'), prueba: (r, v) => r.dificultad === v },
     { id: 'raza', tipo: 'select', label: 'Raza de la madre', opciones: () => razas().map(x => [x, x]), prueba: (r, v) => animal(r.id_madre)?.raza === v },
@@ -66,7 +66,7 @@ registrarSeccion({
 });
 
 function formParto({ empadre } = {}) {
-  const vigentes = store.empadres.filter(vigente);
+  const vigentes = datosE().empadres.filter(vigente);
   abrirFormulario({
     titulo: 'Registrar parto', tam: 'wide',
     sub: 'Al guardar, el empadre se cierra y la madre queda como "lactando". Puedes dar de alta a las crías aquí mismo.',
@@ -93,7 +93,7 @@ function formParto({ empadre } = {}) {
       if ((v.machos || 0) + (v.hembras || 0) + (v.nacidos_muertos || 0) < 1) return { machos: 'Indica al menos una cría (viva o muerta).' };
       const filas = v.crias || [];
       if (filas.length > (v.machos || 0) + (v.hembras || 0)) return { crias: 'Hay más crías para dar de alta que crías vivas indicadas.' };
-      const usados = new Set(store.animales.map(a => a.identificador.toLowerCase()));
+      const usados = new Set(animalesE().map(a => a.identificador.toLowerCase()));
       const vistos = new Set();
       for (const f of filas) {
         const id = f.identificador.toLowerCase();
@@ -113,7 +113,7 @@ function formParto({ empadre } = {}) {
       if (filas.length) {
         const madre = animal(idMadre), idPadre = e ? e.id_macho : null;
         const { data: nuevas, error: e2 } = await db.from('animales').insert(filas.map(f => ({
-          identificador: f.identificador, sexo: f.sexo, raza: madre?.raza || null, fecha_nacimiento: v.fecha_parto,
+          especie: madre?.especie || esp.actual, identificador: f.identificador, sexo: f.sexo, raza: madre?.raza || null, fecha_nacimiento: v.fecha_parto,
           estado_productivo: 'cria', origen: 'nacido_en_rancho', id_madre: idMadre, id_padre: idPadre, nombre_padre: idPadre ? null : (e?.macho_externo || null),
           id_parto: parto.id, peso_inicial: f.peso ? Number(f.peso) : null,
         }))).select('id, identificador');

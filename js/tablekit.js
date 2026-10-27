@@ -13,7 +13,20 @@ function registrarSeccion(cfg) {
     orden: cfg.orden ? { ...cfg.orden } : null,
     pagina: 1, tam: 25,
     colapsado: window.innerWidth <= 960,
+    esp: null,
   };
+}
+
+// Al cambiar de sistema (caprino ↔ ovino) los filtros vuelven a sus valores iniciales.
+function reiniciarSeccion(key) {
+  const cfg = SECCIONES[key], st = estadoSec[key];
+  // Quita el foco antes: al salir de un campo, el navegador confirma su texto y lo volvería a guardar.
+  const activo = document.activeElement;
+  if (activo && activo.closest && activo.closest('#filters-' + key)) activo.blur();
+  st.filtros = Object.assign({}, typeof cfg.defaults === 'function' ? cfg.defaults() : (cfg.defaults || {}));
+  st.pagina = 1; st.esp = esp.actual;
+  const panel = document.getElementById('filters-' + key);
+  if (panel) panel.innerHTML = '';
 }
 
 function htmlVista(cfg) {
@@ -22,7 +35,7 @@ function htmlVista(cfg) {
   return `
   <section class="view" id="view-${cfg.key}" hidden aria-labelledby="h-${cfg.key}">
     <header class="view-head">
-      <div><h1 id="h-${cfg.key}">${esc(cfg.titulo)}</h1><p class="view-sub">${esc(cfg.subtitulo || '')}</p></div>
+      <div><div class="esp-tag" id="esp-${cfg.key}"></div><h1 id="h-${cfg.key}">${esc(cfg.titulo)}</h1><p class="view-sub">${esc(cfg.subtitulo || '')}</p></div>
       <div class="view-actions">${botones}</div>
     </header>
     <div class="banner" id="banner-${cfg.key}" hidden></div>
@@ -125,6 +138,9 @@ function renderSeccion(key) {
   const cfg = SECCIONES[key]; if (!cfg) return;
   const panel = document.getElementById('filters-' + key);
   const st = estadoSec[key];
+  if (st.esp !== esp.actual) reiniciarSeccion(key);
+  const tag = document.getElementById('esp-' + key);
+  if (tag) { tag.textContent = ESPECIES[esp.actual] || ''; tag.dataset.esp = esp.actual; }
   if (!panel.contains(document.activeElement) || !panel.innerHTML) {
     panel.innerHTML = htmlFiltros(cfg);
     panel.classList.toggle('collapsed', st.colapsado);
