@@ -64,6 +64,7 @@ function abrirFormulario({ titulo, sub, campos, valores = {}, etiqueta = 'Guarda
 
   function poner(c, v) {
     const el = cont(c.name); if (!el) return;
+    if (c.tipo === 'foto') return;
     if (c.tipo === 'check') el.querySelector('input').checked = !!v;
     else if (c.tipo === 'animales') {
       const sel = new Set(v || []);
@@ -79,7 +80,8 @@ function abrirFormulario({ titulo, sub, campos, valores = {}, etiqueta = 'Guarda
     for (const c of campos) {
       if (['info', 'section'].includes(c.tipo)) continue;
       const el = cont(c.name);
-      if (c.tipo === 'check') v[c.name] = el.querySelector('input').checked;
+      if (c.tipo === 'foto') v[c.name] = el._foto ? { blob: el._foto.blob, quitar: el._foto.quitar } : { blob: null, quitar: false };
+      else if (c.tipo === 'check') v[c.name] = el.querySelector('input').checked;
       else if (c.tipo === 'animales') v[c.name] = [...el.querySelectorAll('.picker-item input:checked')].map(i => i.value);
       else if (c.tipo === 'crias') v[c.name] = [...el.querySelectorAll('.cria-row')].map(r => ({
         identificador: r.querySelector('[data-k=identificador]').value.trim(),
@@ -129,6 +131,8 @@ function abrirFormulario({ titulo, sub, campos, valores = {}, etiqueta = 'Guarda
   form.addEventListener('input', refrescar);
   form.addEventListener('change', refrescar);
 
+  // Campos de foto (cámara o galería)
+  campos.filter(c => c.tipo === 'foto').forEach(c => iniciarCampoFoto(cont(c.name), c.actual, () => form.dispatchEvent(new Event('change'))));
   // Listas de animales
   form.querySelectorAll('.picker').forEach(p => {
     const q = p.querySelector('[data-pq]');
@@ -204,6 +208,7 @@ function htmlCampo(c) {
   const full = (c.full || ['textarea', 'animales', 'crias'].includes(c.tipo)) ? 'full' : '';
   if (c.tipo === 'section') return `<div class="form-section" data-campo="${c.name}">${esc(c.label)}</div>`;
   if (c.tipo === 'info') return `<div class="info-line" data-campo="${c.name}" hidden></div>`;
+  if (c.tipo === 'foto') return `<div class="field full" data-campo="${c.name}"><span class="field-label">${esc(c.label)}</span>${htmlCampoFoto()}${ayuda}</div>`;
   let ctl = '';
   const ph = c.placeholder ? `placeholder="${esc(c.placeholder)}"` : '';
   if (c.tipo === 'select') {
