@@ -155,9 +155,20 @@ function abrirFicha(id) {
   const salud = store.salud.filter(s => s.id_animal === id).slice(0, 6);
   // Incluye actividades individuales y actividades registradas para todo el hato
   // o para el lote al que pertenece este animal.
-  const manejo = store.manejo
-    .filter(x => x.id_animal === id || (!x.id_animal && (!x.lote || x.lote === a.lote)))
-    .slice(0, 8);
+  const manejo = store.manejo.filter(x => {
+  // Nunca mezclar eventos de especies diferentes.
+    if (x.especie !== a.especie) return false;
+
+  // Actividad registrada directamente para este animal.
+   if (x.id_animal === id) return true;
+
+  // Actividad general del hato o de su lote.
+    if (!x.id_animal) {
+      return !x.lote || x.lote === a.lote;
+    }
+
+   return false;
+  }).slice(0, 8);
   const empadres = store.empadres.filter(e => e.id_hembra === id || e.id_macho === id).slice(0, 6);
   const partos = store.partos.filter(p => p.id_madre === id).slice(0, 6);
   const leche = store.leche.filter(l => l.id_animal === id && l.fecha >= addDays(hoy(), -30));
