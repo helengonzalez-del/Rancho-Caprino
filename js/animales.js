@@ -1,4 +1,5 @@
-// animales.js — Inventario del hato, formulario y ficha individual
+
+ // animales.js — Inventario del hato, formulario y ficha individual
 
 function sinPesajeReciente(a) {
   return a.estado === 'activo' && (!a.fecha_ultimo_peso || diffDays(hoy(), a.fecha_ultimo_peso) > 60);
@@ -152,7 +153,11 @@ function abrirFicha(id) {
   const hijos = store.animales.filter(x => x.id_madre === id || x.id_padre === id);
   const pesos = store.pesajes.filter(p => p.id_animal === id).slice(0, 8);
   const salud = store.salud.filter(s => s.id_animal === id).slice(0, 6);
-  const manejo = store.manejo.filter(x => x.id_animal === id).slice(0, 5);
+  // Incluye actividades individuales y actividades registradas para todo el hato
+  // o para el lote al que pertenece este animal.
+  const manejo = store.manejo
+    .filter(x => x.id_animal === id || (!x.id_animal && (!x.lote || x.lote === a.lote)))
+    .slice(0, 8);
   const empadres = store.empadres.filter(e => e.id_hembra === id || e.id_macho === id).slice(0, 6);
   const partos = store.partos.filter(p => p.id_madre === id).slice(0, 6);
   const leche = store.leche.filter(l => l.id_animal === id && l.fecha >= addDays(hoy(), -30));
@@ -176,7 +181,7 @@ function abrirFicha(id) {
     ${hijos.length ? `<div class="ficha-block"><h4>Crías en el registro</h4><p>${hijos.map(h => animalHtml(h.id)).join(' &nbsp; ')}</p></div>` : ''}
     <div class="ficha-block"><h4>Pesajes recientes</h4>${tabla(['Fecha', 'Peso', 'GDP (g/día)'], pesos.map(p => `<tr><td>${esc(fmtDate(p.fecha))}</td><td>${fmtNum(p.peso)} kg</td><td class="${p.gdp_g < 0 ? 'neg' : ''}">${p.gdp_g == null ? '—' : fmtNum(p.gdp_g, 0)}</td></tr>`))}</div>
     <div class="ficha-block"><h4>Salud</h4>${tabla(['Fecha', 'Tipo', 'Detalle', 'Estado'], salud.map(s => `<tr><td>${esc(fmtDate(s.fecha))}</td><td>${badgeTipo(s.tipo)}</td><td>${esc(s.diagnostico || tratamientoDe(s) || '')}</td><td>${badge('caso', s.estado)}</td></tr>`))}</div>
-    <div class="ficha-block"><h4>Manejo</h4>${tabla(['Fecha', 'Actividad', 'Estado'], manejo.map(x => `<tr><td>${esc(fmtDate(x.fecha))}</td><td>${esc(lbl('manejo', x.tipo))}</td><td>${badge('manejo_estado', estadoManejo(x))}</td></tr>`))}</div>`;
+    <div class="ficha-block"><h4>Manejo</h4>${tabla(['Fecha', 'Actividad', 'Aplica a', 'Estado'], manejo.map(x => `<tr><td>${esc(fmtDate(x.fecha))}</td><td>${esc(lbl('manejo', x.tipo))}</td><td>${esc(x.id_animal ? animalTexto(x.id_animal) : (x.lote ? 'Lote ' + x.lote : 'Todo el hato'))}</td><td>${badge('manejo_estado', estadoManejo(x))}</td></tr>`))}</div>`;
 
   const m = crearModal({ titulo: `Ficha de ${a.identificador}`, tam: 'wide', cuerpo, pie: `<button type="button" class="btn" data-editar>${icon('edit', 'icon-sm')}Editar</button><button type="button" class="btn btn-primary" data-cerrar>Cerrar</button>` });
   m.el.querySelector('[data-editar]').onclick = () => { m.cerrar(); formAnimal(a); };
