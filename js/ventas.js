@@ -61,6 +61,13 @@ registrarSeccion({
 
 const r2 = n => Math.round(n * 100) / 100;
 
+function costoCompraAnimales(ids) {
+  return (ids || []).reduce((total, id) => {
+    const a = animal(id);
+    return total + (a?.origen === 'comprado' ? (Number(a.costo_compra) || 0) : 0);
+  }, 0);
+}
+
 // Ingreso = precio × cantidad, según el tipo de venta. Devuelve undefined cuando se captura a mano ("Otro").
 function calcularIngreso(v) {
   if (v.tipo === 'carne') {
@@ -87,7 +94,7 @@ function formVenta(venta) {
       else if (venta.tipo === 'leche') precio = venta.litros ? r2(venta.ingreso / venta.litros) : null;
       else if (venta.tipo === 'pie_cria') precio = originales.length ? r2(venta.ingreso / originales.length) : null;
     }
-    valores = { ...venta, animales: originales, base_precio: base, precio_kg: venta.tipo === 'carne' ? precio : null, precio_litro: venta.tipo === 'leche' ? precio : null, precio_animal: venta.tipo === 'pie_cria' ? precio : null };
+    valores = { ...venta, costo: Math.max(0, Number(venta.costo || 0) - costoCompraAnimales(originales)), animales: originales, base_precio: base, precio_kg: venta.tipo === 'carne' ? precio : null, precio_litro: venta.tipo === 'leche' ? precio : null, precio_animal: venta.tipo === 'pie_cria' ? precio : null };
   }
 
   abrirFormulario({
@@ -115,7 +122,8 @@ function formVenta(venta) {
         if (v.tipo === 'leche') return `${fmtNum(v.litros, 2)} L × ${fmtMoney(v.precio_litro)} = ${fmtMoney(i)}`;
         return `${v.animales.length} animal${v.animales.length === 1 ? '' : 'es'} × ${fmtMoney(v.precio_animal)} = ${fmtMoney(i)}`;
       } },
-      { name: 'costo', label: 'Costo asociado ($)', tipo: 'number', min: 0, paso: '0.01', ayuda: 'Transporte, matanza, comisiones, etc.' },
+      { name: 'costo', label: 'Otros costos asociados ($)', tipo: 'number', min: 0, paso: '0.01', ayuda: 'Transporte, matanza, comisiones, etc. El costo de compra de los animales se suma automáticamente.' },
+      { name: 'costo_compra_info', tipo: 'info', calcular: v => { const costo = costoCompraAnimales(v.animales); return costo > 0 ? `Costo de compra de los animales seleccionados: ${fmtMoney(costo)}. Se incluirá automáticamente en el costo total de la venta.` : ''; }, mostrarSi: conAnimales },
       { name: 'notas', label: 'Notas', tipo: 'textarea' },
     ],
     validar: v => {
@@ -126,8 +134,9 @@ function formVenta(venta) {
     },
     alGuardar: async v => {
       const precio = v.tipo === 'carne' ? v.precio_kg : v.tipo === 'leche' ? v.precio_litro : v.tipo === 'pie_cria' ? v.precio_animal : null;
-      const d = { especie: esp.actual, fecha: v.fecha, cliente: v.cliente, tipo: v.tipo, ingreso: v.ingreso, costo: v.costo || 0, precio_unitario: precio ?? null, base_precio: v.tipo === 'carne' ? v.base_precio : null, litros: v.tipo === 'leche' ? v.litros : null, peso_vivo: v.tipo === 'carne' ? (v.peso_vivo ?? null) : null, peso_canal: v.tipo === 'carne' ? (v.peso_canal ?? null) : null, notas: v.notas };
       const nuevos = conAnimales(v) ? (v.animales || []) : [];
+      const costoTotal = r2((Number(v.costo) || 0) + costoCompraAnimales(nuevos));
+      const d = { especie: esp.actual, fecha: v.fecha, cliente: v.cliente, tipo: v.tipo, ingreso: v.ingreso, costo: costoTotal, precio_unitario: precio ?? null, base_precio: v.tipo === 'carne' ? v.base_precio : null, litros: v.tipo === 'leche' ? v.litros : null, peso_vivo: v.tipo === 'carne' ? (v.peso_vivo ?? null) : null, peso_canal: v.tipo === 'carne' ? (v.peso_canal ?? null) : null, notas: v.notas };
       let id = venta?.id;
       if (edit) { const { error } = await db.from('ventas').update(d).eq('id', id); if (error) throw error; }
       else { const { data, error } = await db.from('ventas').insert(d).select('id').single(); if (error) throw error; id = data.id; }
