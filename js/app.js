@@ -3,7 +3,7 @@
 // Secciones de cada sistema. El ovino no tiene Leche.
 const ITEMS_COMUNES = [
   ['resumen', 'Resumen', 'dashboard'], ['animales', 'Animales', 'tag'], ['empadre', 'Empadre', 'heart'], ['partos', 'Partos', 'sprout'],
-  ['produccion', 'Producción', 'scale'], ['leche', 'Leche', 'droplet'], ['salud', 'Salud', 'health'], ['manejo', 'Manejo', 'clipboard'], ['ventas', 'Ventas', 'receipt'],
+  ['produccion', 'Producción', 'scale'], ['insumos', 'Insumos', 'box'], ['leche', 'Leche', 'droplet'], ['salud', 'Salud', 'health'], ['manejo', 'Manejo', 'clipboard'], ['ventas', 'Ventas', 'receipt'],
 ];
 const SISTEMAS = {
   caprino: { nombre: 'Sistema caprino', icono: 'goat', items: ITEMS_COMUNES },
@@ -133,4 +133,3 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 iniciarAuth();
-

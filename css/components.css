@@ -382,3 +382,19 @@ td.acciones { white-space: nowrap; text-align: right; width: 1%; }
 .foto-ficha.con-foto { cursor: zoom-in; }
 .ficha-cab-info { flex: 1; min-width: 0; }
 @media (max-width: 640px) { .ficha-cab { flex-direction: column; } .ficha-foto { width: 100%; flex-direction: row; align-items: center; } }
+
+/* ============ INSUMOS: calculadora de compra ============ */
+.calc-panel { margin-bottom: 14px; }
+.calc-panel .panel-body { padding-top: 14px; }
+.calc-controles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 14px; margin-bottom: 14px; }
+.calc-panel .summary { margin-bottom: 12px; }
+.calc-panel .banner { margin-bottom: 10px; }
+.calc-tabla-wrap { max-height: none; border: 1px solid var(--linea-suave); border-radius: var(--radio-sm); }
+.calc-tabla { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.calc-tabla th { position: static; }
+.calc-tabla tfoot td { padding: 9px 12px; font-weight: 600; background: var(--superficie-2); border-top: 1px solid var(--linea); }
+.calc-tabla input.ci-pct { width: 84px; height: 30px; text-align: right; }
+.calc-nota { margin-top: 10px; font-size: 12.5px; color: var(--texto-3); max-width: 90ch; }
+#insumos-tipos .calc-tabla tbody td { border-bottom: 1px solid var(--linea-suave); padding: 9px 12px; }
+#insumos-tipos .calc-tabla thead th { background: var(--superficie-2); padding: 9px 12px; text-align: left; }
+#insumos-tipos .calc-tabla thead th.num { text-align: right; }

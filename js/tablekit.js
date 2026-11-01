@@ -38,6 +38,7 @@ function htmlVista(cfg) {
       <div><div class="esp-tag" id="esp-${cfg.key}"></div><h1 id="h-${cfg.key}">${esc(cfg.titulo)}</h1><p class="view-sub">${esc(cfg.subtitulo || '')}</p></div>
       <div class="view-actions">${botones}</div>
     </header>
+    ${cfg.arribaHtml || ''}
     <div class="banner" id="banner-${cfg.key}" hidden></div>
     <div class="panel filters" id="filters-${cfg.key}"></div>
     <div class="summary" id="summary-${cfg.key}"></div>

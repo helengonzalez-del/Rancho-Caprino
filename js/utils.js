@@ -83,6 +83,7 @@ const L = {
   manejo: { identificacion: 'Identificación', descorne: 'Descorne', destete: 'Destete', castracion: 'Castración', recorte_pezunas: 'Recorte de pezuñas', secado: 'Secado', cambio_lote: 'Cambio de lote', alimentacion: 'Alimentación', seleccion: 'Selección y descarte', limpieza: 'Limpieza de corrales', otro: 'Otro' },
   manejo_estado: { programado: 'Programado', realizado: 'Realizado', vencido: 'Vencido' },
   venta: { carne: 'Carne', pie_cria: 'Pie de cría', leche: 'Leche', otro: 'Otro' },
+  insumo_unidad: { paca: 'Paca', costal: 'Costal o saco', kilo: 'Por kilo (a granel)' },
 };
 function opts(catalogo) { return Object.entries(L[catalogo]); }
 function lbl(cat, v) { return v ? (L[cat][v] || v) : '—'; }

@@ -1,6 +1,6 @@
 // store.js — Datos en memoria, carga desde Supabase y consultas de apoyo
 
-const store = { razas: [], animales: [], empadres: [], partos: [], pesajes: [], leche: [], salud: [], manejo: [], ventas: [], venta_animales: [] };
+const store = { razas: [], animales: [], empadres: [], partos: [], pesajes: [], leche: [], salud: [], manejo: [], ventas: [], venta_animales: [], insumos: [], insumos_racion: [] };
 let lecheDesde = null;            // fecha desde la que se cargó leche (null = todo el historial)
 const animalMap = new Map();
 
@@ -15,6 +15,8 @@ const FUENTES = {
   manejo:         { tabla: 'manejo',         orden: 'fecha', desc: true },
   ventas:         { tabla: 'ventas',         orden: 'fecha', desc: true },
   venta_animales: { tabla: 'venta_animales', orden: 'id' },
+  insumos:        { tabla: 'insumos',        orden: 'fecha', desc: true },
+  insumos_racion: { tabla: 'insumos_racion', orden: 'tipo', sinId: true },
 };
 
 // Si cambia una tabla, estas son las que hay que volver a cargar
@@ -29,6 +31,8 @@ const DEPENDENCIAS = {
   manejo: ['manejo', 'animales'],
   ventas: ['ventas'],
   venta_animales: ['venta_animales', 'ventas', 'animales'],
+  insumos: ['insumos'],
+  insumos_racion: ['insumos_racion'],
 };
 
 // Supabase devuelve máximo 1000 filas por consulta: se pide por páginas.
@@ -50,7 +54,7 @@ async function cargarTabla(key) {
     let q = db.from(f.tabla).select('*');
     if (key === 'leche' && lecheDesde) q = q.gte('fecha', lecheDesde);
     q = q.order(f.orden, { ascending: !f.desc });
-    return f.orden === 'id' ? q : q.order('id');
+    return (f.orden === 'id' || f.sinId) ? q : q.order('id');
   });
 }
 
@@ -114,6 +118,8 @@ function datosE() {
     salud: deAnimal(store.salud, 'id_animal'),
     manejo: store.manejo.filter(x => enEsp(x.especie)),
     ventas: store.ventas.filter(x => enEsp(x.especie)),
+    insumos: store.insumos.filter(x => enEsp(x.especie)),
+    racion: store.insumos_racion.filter(x => enEsp(x.especie)),
   };
 }
 
